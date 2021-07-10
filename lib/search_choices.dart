@@ -6,60 +6,10 @@ const EdgeInsetsGeometry _kAlignedButtonPadding =
     EdgeInsetsDirectional.only(start: 16.0, end: 4.0);
 const EdgeInsets _kUnalignedButtonPadding = EdgeInsets.zero;
 
-
-class DropdownButtonNoSelDisp<T> extends  DropdownButton{
-  DropdownButtonNoSelDisp(
-      {
-        Key? key,
-        required List<DropdownMenuItem<T>>? items,
-        DropdownButtonBuilder? selectedItemBuilder,
-        T? value,
-        Widget? hint,
-        Widget? disabledHint,
-        ValueChanged<dynamic>? onChanged,
-        VoidCallback? onTap,
-        int elevation = 8,
-        TextStyle? style,
-        Widget? underline,
-        Widget? icon,
-        Color? iconDisabledColor,
-        Color? iconEnabledColor,
-        double iconSize = 24.0,
-        bool isDense = false,
-        bool isExpanded = false,
-        double? itemHeight = kMinInteractiveDimension,
-        Color? focusColor,
-        FocusNode? focusNode,
-        bool autofocus = false,
-        Color? dropdownColor,
-        double? menuMaxHeight,
-      }
-  ):super(
-      key:key,
-      items: items,
-    selectedItemBuilder:selectedItemBuilder,
-    value:value,
-    hint:hint,
-    disabledHint:disabledHint,
-    onChanged:onChanged,
-    onTap:onTap,
-    elevation:elevation,
-    style:style,
-    underline:underline,
-    icon:icon,
-    iconDisabledColor:iconDisabledColor,
-    iconEnabledColor:iconEnabledColor,
-    iconSize:iconSize,
-    isDense:isDense,
-    isExpanded:isExpanded,
-    itemHeight:itemHeight,
-    focusColor:focusColor,
-    focusNode:focusNode,
-    autofocus:autofocus,
-    dropdownColor:dropdownColor,
-    menuMaxHeight:menuMaxHeight,
-  );
-
+enum SearchChoicesMode{
+  dialogBox,
+  menu,
+  dropdown,
 }
 
 /// Class mainly used internally to set a value to NotGiven by its type
@@ -285,10 +235,18 @@ class SearchChoices<T> extends StatefulWidget {
   /// [displayItem] [Function] with parameters: __item__, __selected__ returning [Widget] to be displayed in the search list.
   final Function? displayItem;
 
-  /// [dialogBox] whether the search should be displayed as a dialog box or as a menu below the selected value if any.
-  final bool dialogBox;
+  /// [oldDialogBox] whether the search should be displayed as a dialog box or as a menu below the selected value if any. This is deprecated in favor of the [mode] parameter.
+  @deprecated final bool? oldDialogBox;
 
-  /// [menuConstraints] [BoxConstraints] used to define the zone where to display the search menu. Example: BoxConstraints.tight(Size.fromHeight(250)) . Not to be used for dialogBox = true.
+  /// [dialogBox] is smoothly replaced by [mode]
+  bool get dialogBox{
+    return(mode==SearchChoicesMode.dialogBox);
+  }
+
+  /// [mode] [SearchChoicesMode] choose between dialogBox, menu or dropdown. dropdown is the least compatible with the other parameters but it is the most compact.
+  final SearchChoicesMode mode;
+
+  /// [menuConstraints] [BoxConstraints] used to define the zone where to display the search menu. Example: BoxConstraints.tight(Size.fromHeight(250)) . To be used only for [mode] = SearchChoicesMode.menu .
   final BoxConstraints? menuConstraints;
 
   /// [readOnly] [bool] whether to let the user choose the value to select or just present the selected value if any.
@@ -322,8 +280,8 @@ class SearchChoices<T> extends StatefulWidget {
   ///      child: Card(
   ///        color: widget.menuBackgroundColor,
   ///        margin: EdgeInsets.symmetric(
-  ///            vertical: widget.dialogBox ? 10 : 5,
-  ///            horizontal: widget.dialogBox ? 10 : 4),
+  ///            vertical: widget.mode == SearchchoicesMode.dialogBox ? 10 : 5,
+  ///            horizontal: widget.mode == SearchchoicesMode.dialogBox ? 10 : 4),
   ///        child: Container(
   ///          constraints: widget.menuConstraints,
   ///          padding: EdgeInsets.symmetric(vertical: 15, horizontal: 15),
@@ -405,8 +363,9 @@ class SearchChoices<T> extends StatefulWidget {
   /// * [validator] [Function] with parameter: __value__ returning [String] displayed below selected value when not valid and null when valid.
   /// * [assertUniqueValue] whether to run a consistency check of the list of items.
   /// * [displayItem] [Function] with parameters: __item__, __selected__ returning [Widget] to be displayed in the search list.
-  /// * [dialogBox] whether the search should be displayed as a dialog box or as a menu below the selected value if any.
-  /// * [menuConstraints] [BoxConstraints] used to define the zone where to display the search menu. Example: BoxConstraints.tight(Size.fromHeight(250)) . Not to be used for dialogBox = true.
+  /// * [dialogBox] whether the search should be displayed as a dialog box or as a menu below the selected value if any. This is deprecated in favor of the [mode] parameter.
+  /// * [mode] [SearchChoicesMode] choose between dialogBox, menu or dropdown. dropdown is the least compatible with the other parameters but it is the most compact.
+  /// * [menuConstraints] [BoxConstraints] used to define the zone where to display the search menu. Example: BoxConstraints.tight(Size.fromHeight(250)) . Should be used only for [mode] = SearchChoicesMode.menu .
   /// * [readOnly] [bool] whether to let the user choose the value to select or just present the selected value if any.
   /// * [menuBackgroundColor] [Color] background color of the menu whether in dialog box or menu mode.
   /// * [rightToLeft] [bool] mirrors the widgets display for right to left languages defaulted to false.
@@ -450,7 +409,8 @@ class SearchChoices<T> extends StatefulWidget {
     Function? validator,
     bool assertUniqueValue = true,
     Function? displayItem,
-    bool dialogBox = true,
+    @deprecated bool? dialogBox,
+    SearchChoicesMode mode = SearchChoicesMode.dialogBox,
     BoxConstraints? menuConstraints,
     bool readOnly = false,
     Color? menuBackgroundColor,
@@ -505,7 +465,8 @@ class SearchChoices<T> extends StatefulWidget {
       multipleSelection: false,
       doneButton: doneButton,
       displayItem: displayItem,
-      dialogBox: dialogBox,
+      oldDialogBox: dialogBox,
+      mode: dialogBox==null?mode:dialogBox?SearchChoicesMode.dialogBox:SearchChoicesMode.menu,
       menuConstraints: menuConstraints,
       readOnly: readOnly,
       menuBackgroundColor: menuBackgroundColor,
@@ -552,8 +513,9 @@ class SearchChoices<T> extends StatefulWidget {
   /// * [keyboardType] used for the search.
   /// * [validator] [Function] with parameter: __selectedItems__ returning [String] displayed below selected values when not valid and null when valid.
   /// * [displayItem] [Function] with parameters: __item__, __selected__ returning [Widget] to be displayed in the search list.
-  /// * [dialogBox] whether the search should be displayed as a dialog box or as a menu below the selected values if any.
-  /// * [menuConstraints] [BoxConstraints] used to define the zone where to display the search menu. Example: BoxConstraints.tight(Size.fromHeight(250)) . Not to be used for dialogBox = true.
+  /// * [dialogBox] whether the search should be displayed as a dialog box or as a menu below the selected value if any. This is deprecated in favor of the [mode] parameter.
+  /// * [mode] [SearchChoicesMode] choose between dialogBox, menu or dropdown (not available in multiple mode). dropdown is the least compatible with the other parameters but it is the most compact.
+  /// * [menuConstraints] [BoxConstraints] used to define the zone where to display the search menu. Example: BoxConstraints.tight(Size.fromHeight(250)) . Should be used only for [mode] = SearchChoicesMode.menu .
   /// * [readOnly] [bool] whether to let the user choose the value to select or just present the selected value if any.
   /// * [menuBackgroundColor] [Color] background color of the menu whether in dialog box or menu mode.
   /// * [rightToLeft] [bool] mirrors the widgets display for right to left languages defaulted to false.
@@ -597,7 +559,8 @@ class SearchChoices<T> extends StatefulWidget {
     TextInputType keyboardType = TextInputType.text,
     Function? validator,
     Function? displayItem,
-    bool dialogBox = true,
+    @deprecated bool? dialogBox,
+    SearchChoicesMode mode = SearchChoicesMode.dialogBox,
     BoxConstraints? menuConstraints,
     bool readOnly = false,
     Color? menuBackgroundColor,
@@ -653,7 +616,8 @@ class SearchChoices<T> extends StatefulWidget {
       doneButton: doneButton,
       onChanged: onChanged,
       displayItem: displayItem,
-      dialogBox: dialogBox,
+      oldDialogBox: dialogBox,
+      mode: dialogBox==null?mode:dialogBox?SearchChoicesMode.dialogBox:SearchChoicesMode.menu,
       menuConstraints: menuConstraints,
       readOnly: readOnly,
       menuBackgroundColor: menuBackgroundColor,
@@ -703,7 +667,8 @@ class SearchChoices<T> extends StatefulWidget {
     this.selectedItems = const [],
     this.doneButton,
     this.displayItem,
-    required this.dialogBox,
+    @deprecated this.oldDialogBox,
+    this.mode = SearchChoicesMode.dialogBox,
     this.menuConstraints,
     required this.readOnly,
     this.menuBackgroundColor,
@@ -722,7 +687,7 @@ class SearchChoices<T> extends StatefulWidget {
     this.futureSearchFilterOptions,
     this.futureSelectedValues,
   })  : assert(!multipleSelection || doneButton != null),
-        assert(menuConstraints == null || !dialogBox),
+        assert(menuConstraints == null || mode==SearchChoicesMode.menu),
         assert(itemsPerPage == null || currentPage != null,
             "currentPage must be given if itemsPerPage is given"),
         assert(futureSearchOrderOptions==null||futureSearchFn!=null,"futureSearchOrderOptions is of no use if futureSearchFn is not set"),
@@ -896,7 +861,7 @@ class _SearchChoicesState<T> extends State<SearchChoices<T>> {
     @override
     void initState() {
       if (widget.setOpenDialog != null) {
-        widget.setOpenDialog!(showDialogOrMenu);
+        widget.setOpenDialog!(showDialogOrMenuOrDropdown);
       }
       if (widget.futureSearchFn != null) {
         futureSelectedValues = [];
@@ -936,74 +901,123 @@ class _SearchChoicesState<T> extends State<SearchChoices<T>> {
       }
     }
 
-    Widget menuWidget({String searchTerms = ""}) {
-      return StatefulBuilder(
-          builder: (BuildContext menuContext, StateSetter setStateFromBuilder) {
-            return (DropdownDialog(
-              items: widget.items,
-              hint: prepareWidget(widget.searchHint),
-              isCaseSensitiveSearch: widget.isCaseSensitiveSearch,
-              closeButton: widget.closeButton,
-              keyboardType: widget.keyboardType,
-              searchFn: widget.searchFn,
-              multipleSelection: widget.multipleSelection,
-              selectedItems: selectedItems,
-              doneButton: widget.doneButton,
-              displayItem: widget.displayItem,
-              validator: widget.validator,
-              dialogBox: widget.dialogBox,
-              displayMenu: displayMenu,
-              menuConstraints: widget.menuConstraints,
-              menuBackgroundColor: widget.menuBackgroundColor,
-              style: widget.style,
-              iconEnabledColor: widget.iconEnabledColor,
-              iconDisabledColor: widget.iconDisabledColor,
-              callOnPop: () {
-                if (!widget.dialogBox &&
-                    widget.onChanged != null &&
-                    selectedResult != null) {
-                  sendSelection(selectedResult,menuContext);
-                }
-                setState(() {});
-              },
-              updateParent: (value) {
-                updateParent!(value);
-                setStateFromBuilder(() {});
-              },
-              rightToLeft: widget.rightToLeft,
-              autofocus: widget.autofocus,
-              initialSearchTerms: searchTerms,
-              buildDropDownDialog: widget.buildDropDownDialog,
-              searchInputDecoration: widget.searchInputDecoration,
-              itemsPerPage: widget.itemsPerPage,
-              currentPage: widget.currentPage,
-              customPaginationDisplay: widget.customPaginationDisplay,
-              futureSearchFn: widget.futureSearchFn,
-              futureSearchOrderOptions: widget.futureSearchOrderOptions,
-              futureSearchFilterOptions: widget.futureSearchFilterOptions,
-              futureSelectedValues: futureSelectedValues,
-            ));
-          });
-    }
+  Widget menuWidget({String searchTerms = ""}) {
+    return StatefulBuilder(
+        builder: (BuildContext menuContext, StateSetter setStateFromBuilder) {
+          return (DropdownDialog(
+            items: widget.items,
+            hint: prepareWidget(widget.searchHint),
+            isCaseSensitiveSearch: widget.isCaseSensitiveSearch,
+            closeButton: widget.closeButton,
+            keyboardType: widget.keyboardType,
+            searchFn: widget.searchFn,
+            multipleSelection: widget.multipleSelection,
+            selectedItems: selectedItems,
+            doneButton: widget.doneButton,
+            displayItem: widget.displayItem,
+            validator: widget.validator,
+            dialogBox: widget.dialogBox,
+            mode:widget.mode,
+            displayMenu: displayMenu,
+            menuConstraints: widget.menuConstraints,
+            menuBackgroundColor: widget.menuBackgroundColor,
+            style: widget.style,
+            iconEnabledColor: widget.iconEnabledColor,
+            iconDisabledColor: widget.iconDisabledColor,
+            callOnPop: () {
+              if (!widget.dialogBox &&
+                  widget.onChanged != null &&
+                  selectedResult != null) {
+                sendSelection(selectedResult,menuContext);
+              }
+              setState(() {});
+            },
+            updateParent: (value) {
+              updateParent!(value);
+              setStateFromBuilder(() {});
+            },
+            rightToLeft: widget.rightToLeft,
+            autofocus: widget.autofocus,
+            initialSearchTerms: searchTerms,
+            buildDropDownDialog: widget.buildDropDownDialog,
+            searchInputDecoration: widget.searchInputDecoration,
+            itemsPerPage: widget.itemsPerPage,
+            currentPage: widget.currentPage,
+            customPaginationDisplay: widget.customPaginationDisplay,
+            futureSearchFn: widget.futureSearchFn,
+            futureSearchOrderOptions: widget.futureSearchOrderOptions,
+            futureSearchFilterOptions: widget.futureSearchFilterOptions,
+            futureSelectedValues: futureSelectedValues,
+          ));
+        });
+  }
 
-    showDialogOrMenu(String searchTerms) async {
-      if (widget.dialogBox) {
-        await showDialog(
-            context: context,
-            barrierDismissible: true,
-            builder: (BuildContext dialogContext) {
-              return (menuWidget(searchTerms: searchTerms));
-            });
-        if (widget.onChanged != null && selectedResult != null) {
-          sendSelection(selectedResult,context);
-        }
-      } else {
-        displayMenu.value = true;
+  DropdownDialog dropdownWidget({String searchTerms = ""}) {
+    return (DropdownDialog(
+            items: widget.items,
+            hint: prepareWidget(widget.searchHint),
+            isCaseSensitiveSearch: widget.isCaseSensitiveSearch,
+            closeButton: widget.closeButton,
+            keyboardType: widget.keyboardType,
+            searchFn: widget.searchFn,
+            multipleSelection: widget.multipleSelection,
+            selectedItems: selectedItems,
+            doneButton: widget.doneButton,
+            displayItem: widget.displayItem,
+            validator: widget.validator,
+            dialogBox: widget.dialogBox,
+            mode:widget.mode,
+            displayMenu: displayMenu,
+            menuConstraints: widget.menuConstraints,
+            menuBackgroundColor: widget.menuBackgroundColor,
+            style: widget.style,
+            iconEnabledColor: widget.iconEnabledColor,
+            iconDisabledColor: widget.iconDisabledColor,
+            callOnPop: () {
+              if (!widget.dialogBox &&
+                  widget.onChanged != null &&
+                  selectedResult != null) {
+                sendSelection(selectedResult,context);
+              }
+              setState(() {});
+            },
+            updateParent: (value) {
+              updateParent!(value);
+              setState(() {});
+            },
+            rightToLeft: widget.rightToLeft,
+            autofocus: widget.autofocus,
+            initialSearchTerms: searchTerms,
+            buildDropDownDialog: widget.buildDropDownDialog,
+            searchInputDecoration: widget.searchInputDecoration,
+            itemsPerPage: widget.itemsPerPage,
+            currentPage: widget.currentPage,
+            customPaginationDisplay: widget.customPaginationDisplay,
+            futureSearchFn: widget.futureSearchFn,
+            futureSearchOrderOptions: widget.futureSearchOrderOptions,
+            futureSearchFilterOptions: widget.futureSearchFilterOptions,
+            futureSelectedValues: futureSelectedValues,
+          ));
+  }
+
+  showDialogOrMenuOrDropdown(String searchTerms) async {
+    if (widget.dialogBox) {
+      await showDialog(
+          context: context,
+          barrierDismissible: true,
+          builder: (BuildContext dialogContext) {
+            return (menuWidget(searchTerms: searchTerms));
+          });
+      if (widget.onChanged != null && selectedResult != null) {
+        sendSelection(selectedResult, context);
       }
-      if (mounted) {
-        setState(() {});
-      }
+    } else {
+      displayMenu.value = true;
     }
+    if (mounted) {
+      setState(() {});
+    }
+  }
 
     @override
     Widget build(BuildContext context) {
@@ -1066,37 +1080,42 @@ class _SearchChoicesState<T> extends State<SearchChoices<T>> {
           .alignedDropdown
           ? _kAlignedButtonPadding
           : _kUnalignedButtonPadding;
-      Widget? clickable = !_enabled &&
-          prepareWidget(widget.disabledHint, parameter: updateParent) != null
-          ? prepareWidget(widget.disabledHint, parameter: updateParent)
-          : InkWell(
-          key: Key(
-              "clickableResultPlaceHolder"),
-          //this key is used for running automated tests
-          onTap: widget.readOnly || !_enabled
-              ? null
-              : () async {
-            await showDialogOrMenu("");
-          },
-          child: Row(
-            textDirection:
-            widget.rightToLeft ? TextDirection.rtl : TextDirection.ltr,
-            children: <Widget>[
-              widget.isExpanded
-                  ? Expanded(child: innerItemsWidget)
-                  : innerItemsWidget,
-              IconTheme(
-                data: IconThemeData(
-                  color: _iconColor,
-                  size: widget.iconSize,
+      Widget? clickable;
+      if(widget.mode==SearchChoicesMode.dropdown&&displayMenu.value) {
+        clickable=dropdownWidget();
+      }
+      else{
+        clickable = !_enabled &&
+            prepareWidget(widget.disabledHint, parameter: updateParent) != null
+            ? prepareWidget(widget.disabledHint, parameter: updateParent)
+            : InkWell(
+            key: Key(
+                "clickableResultPlaceHolder"),
+            //this key is used for running automated tests
+            onTap: widget.readOnly || !_enabled
+                ? null
+                : () async {
+              await showDialogOrMenuOrDropdown("");
+            },
+            child: Row(
+              textDirection:
+              widget.rightToLeft ? TextDirection.rtl : TextDirection.ltr,
+              children: <Widget>[
+                widget.isExpanded
+                    ? Expanded(child: innerItemsWidget)
+                    : innerItemsWidget,
+                IconTheme(
+                  data: IconThemeData(
+                    color: _iconColor,
+                    size: widget.iconSize,
+                  ),
+                  child:
+                  prepareWidget(widget.icon, parameter: selectedResult) ??
+                      SizedBox.shrink(),
                 ),
-                child:
-                prepareWidget(widget.icon, parameter: selectedResult) ??
-                    SizedBox.shrink(),
-              ),
-            ],
-          ));
-
+              ],
+            ));
+      }
       Widget result = DefaultTextStyle(
         style: _textStyle,
         child: Container(
@@ -1158,6 +1177,42 @@ class _SearchChoicesState<T> extends State<SearchChoices<T>> {
                 widget.rightToLeft ? TextDirection.rtl : TextDirection.ltr,
                 style: TextStyle(color: Colors.blueAccent, fontSize: 13)));
           });
+//      if(widget.mode==SearchChoicesMode.dropdown){
+//        return(dropdownWidget());
+//      }
+      if(widget.mode==SearchChoicesMode.dropdown&&displayMenu.value){
+        Widget? closeButton;
+        if(widget.closeButton!=null&&widget.closeButton!="Close"){
+          closeButton=prepareWidget(
+            widget.closeButton,
+            context: context, updateParent: (sel) {
+            this.updateParent!(sel);
+            setState(() {});
+          },);
+        }
+        else{
+          closeButton=IconButton(icon: Icon(widget.rightToLeft?Icons.arrow_forward:Icons.arrow_back),onPressed: (){
+            displayMenu.value=false;
+            setState(() {
+            });
+          },);
+        }
+        return(
+        Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+          children:[
+            labelOutput ?? SizedBox.shrink(),
+              Row(
+                children: [
+                  widget.rightToLeft?SizedBox.shrink():closeButton!,
+                  Expanded(child:dropdownWidget(),),
+                  widget.rightToLeft?closeButton!:SizedBox.shrink(),
+                ],
+              ),
+            ]
+        )
+        );
+      }
       return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
@@ -1200,7 +1255,7 @@ class _SearchChoicesState<T> extends State<SearchChoices<T>> {
             style: TextStyle(color: Colors.red, fontSize: 13),
           )
               : validatorOutput,
-          displayMenu.value ? menuWidget() : SizedBox.shrink(),
+          displayMenu.value &&widget.mode==SearchChoicesMode.menu? menuWidget() : SizedBox.shrink(),
         ],
       );
     }
@@ -1258,7 +1313,10 @@ class DropdownDialog<T> extends StatefulWidget {
   final Function? validator;
 
   /// See SearchChoices class.
-  final bool dialogBox;
+  @deprecated final bool dialogBox;
+
+  /// See SearchChoices class
+  final SearchChoicesMode mode;
 
   /// See SearchChoices class.
   final PointerThisPlease<bool> displayMenu;
@@ -1340,7 +1398,8 @@ class DropdownDialog<T> extends StatefulWidget {
     this.displayItem,
     this.doneButton,
     this.validator,
-    required this.dialogBox,
+    @deprecated this.dialogBox=true,
+    this.mode=SearchChoicesMode.dialogBox,
     required this.displayMenu,
     this.menuConstraints,
     this.callOnPop,
@@ -1386,6 +1445,10 @@ class _DropdownDialogState<T> extends State<DropdownDialog> {
 
   Future<Tuple2<List<DropdownMenuItem>, int>>? latestFutureResult;
   List<dynamic>? latestFutureSearchArgs;
+
+  OverlayEntry? overlayEntry;
+
+  GlobalKey searchBarKey=GlobalKey(debugLabel:"SearchChoicesSearchBar");
 
   _DropdownDialogState();
 
@@ -1701,6 +1764,115 @@ class _DropdownDialogState<T> extends State<DropdownDialog> {
 
   @override
   Widget build(BuildContext dropdownDialogContext) {
+    if(widget.mode==SearchChoicesMode.dropdown){
+      return(searchBar(searchBarContext: dropdownDialogContext));
+
+
+      List<PopupMenuItem> ppItems=nonFutureItemsToDisplay().map<PopupMenuItem>((t3){
+      return(PopupMenuItem(child:t3.item2.child,value:t3.item2.value,));
+    }).toList();
+      return(
+      PopupMenuButton(
+        itemBuilder: (BuildContext ppContext){
+          return(ppItems);
+        },
+        child: searchBar(),
+      )
+      );
+
+      List<DropdownMenuItem> ddItems=nonFutureItemsToDisplay().map<DropdownMenuItem>((t3){
+        return(t3.item2);
+      }).toList();
+      return(
+      DropdownButton(
+        onChanged: (dynamic value){},
+        items: ddItems,
+        icon: Expanded(child:searchBar()),
+        hint: SizedBox.shrink(),
+      )
+      );
+//      if(overlayEntry==null) {
+//        overlayEntry =  OverlayEntry(
+//          opaque: false,
+//          builder:(BuildContext overlayContext){
+//            RenderBox? renderBox=dropdownDialogContext.findRenderObject() as RenderBox;
+//            Offset p = renderBox.localToGlobal(Offset.zero);
+//            return(
+//                Positioned(
+//                  top:p.dy+renderBox.size.height,
+//                left:p.dx,
+//                child:
+////                Column(
+////              children:nonFutureItemsToDisplay().map<DropdownMenuItem>((t3){
+////            return(t3.item2);
+////          }).toList()
+////            )
+//                    ListView(
+//              children:nonFutureItemsToDisplay().map<DropdownMenuItem>((t3){
+//            return(t3.item2);
+//          }).toList()
+//            )
+//                )
+//            );
+//          },
+//        );
+//        Future.delayed(Duration(milliseconds: 500)).then((value){Overlay.of(dropdownDialogContext)?.insert(overlayEntry!);});
+//      }
+//      return(searchBar());
+//      return(DropdownButton(
+//        items: nonFutureItemsToDisplay().map<DropdownMenuItem>((t3){
+//            return(t3.item2);
+//          }).toList(),
+//      ));
+//      showMenu(
+//          context: context,
+//          position: RelativeRect.fromLTRB(100, 30, 20, 100),
+//    items:nonFutureItemsToDisplay().map<PopupMenuItem>((t3){
+//      return(PopupMenuItem(child:t3.item2.child,value:t3.item2.value,));
+//    }).toList(),
+//      );
+//      return(Column(children:[
+////        PopupMenuButton(
+////          child:searchBar(),
+////          itemBuilder: (BuildContext dropdownContext){
+////            return(nonFutureItemsToDisplay().map<PopupMenuItem>((t3){
+////              if(t3.item3){
+////                return(CheckedPopupMenuItem(child:t3.item2.child,value:t3.item2.value,));
+////              }
+////              return(PopupMenuItem(child:t3.item2.child,value:t3.item2.value,));
+////            }).toList());
+////          },
+////        ),
+//        DropdownButton(
+//          hint:searchBar(),
+//          items: nonFutureItemsToDisplay().map<DropdownMenuItem>((t3){
+//            return(t3.item2);
+//          }).toList(),
+//        ),
+//      ]));
+//      return(Column(children:[
+//        searchBar(),
+//        Overlay(
+//          initialEntries: [
+//          OverlayEntry(
+//            builder: (BuildContext overlayContext){
+//            return(
+//            SizedBox(
+//              width: 400,
+//            height: 400,
+//            child:Column(
+//              children:nonFutureItemsToDisplay().map<DropdownMenuItem>((t3){
+//            return(t3.item2);
+//          }).toList()
+//            ))
+//            );
+//          },
+//            opaque: true,
+//          )
+//        ],
+//        ),
+//      ]));
+    }
     if (widget.buildDropDownDialog != null) {
       return (widget.buildDropDownDialog!(
           titleBar(), searchBar(), listWithPagination(), closeButtonWrapper(),
@@ -1900,11 +2072,43 @@ class _DropdownDialogState<T> extends State<DropdownDialog> {
   }
 
   /// Search bar where the user can type text to look for the items to select.
-  Widget searchBar() {
+  Widget searchBar({BuildContext? searchBarContext,}) {
+    if(widget.mode == SearchChoicesMode.dropdown){
+      Future.delayed(Duration(milliseconds: 500)).then((value){
+        overlayEntry =  OverlayEntry(
+          opaque: false,
+          builder:(BuildContext overlayContext){
+            RenderBox? renderBox=searchBarContext?.findRenderObject() as RenderBox;
+            Offset p = renderBox.localToGlobal(Offset.zero);
+            return Theme(
+              data:Theme.of(searchBarContext??context),//The app theme is not applied to the overlay. https://github.com/flutter/flutter/issues/39379
+              child: (
+                  Positioned(
+                    top:p.dy+renderBox.size.height,
+                  left:p.dx,
+                  child:
+                  SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                children:nonFutureItemsToDisplay().map<DropdownMenuItem>((t3){
+              return(t3.item2);
+          }).toList(),
+              ),
+                  )
+                  )
+              ),
+            );
+          },
+        );
+        Future.delayed(Duration(milliseconds: 100)).then((value){Overlay.of(searchBarContext??context)?.insert(overlayEntry!);});
+      }
+      );
+    }
     return Container(
       child: Stack(
         children: <Widget>[
           TextField(
+            key: searchBarKey,
             textDirection:
             widget.rightToLeft ? TextDirection.rtl : TextDirection.ltr,
             controller: txtSearch,
@@ -2031,6 +2235,38 @@ class _DropdownDialogState<T> extends State<DropdownDialog> {
       return (widget.futureSelectedValues!.contains(value));
     }
     return (widget.selectedItems?.contains(index) ?? false);
+  }
+
+  /// Returns the list of items to display in the non-future case.
+  List<Tuple3<int, DropdownMenuItem<dynamic>, bool>> nonFutureItemsToDisplay(){
+    assert(!futureSearch,"nonFutureItemsToDisplay cannot be called with a future search");
+    List<int> pagedShownIndexes = [];
+      if (widget.itemsPerPage == null ||
+          widget.itemsPerPage! >= shownIndexes.length) {
+        pagedShownIndexes = shownIndexes;
+      } else {
+        if (widget.currentPage!.value < 1 ||
+            widget.currentPage!.value >
+                (shownIndexes.length / widget.itemsPerPage!).ceil()) {
+          widget.currentPage!.value = 1;
+        }
+        for (int i = widget.itemsPerPage! * (widget.currentPage!.value - 1);
+        i < widget.itemsPerPage! * (widget.currentPage!.value) &&
+            i < shownIndexes.length;
+        i++) {
+          pagedShownIndexes.add(shownIndexes[i]);
+        }
+      }
+
+    List<Tuple3<int, DropdownMenuItem<dynamic>, bool>> itemsToDisplay;
+    itemsToDisplay =
+        pagedShownIndexes.map<Tuple3<int, DropdownMenuItem<T>, bool>>((
+            int index) {
+          return (Tuple3<int, DropdownMenuItem<T>, bool>(
+              index, widget.items![index] as DropdownMenuItem<T>,
+              isItemSelected(index, widget.items![index].value)));
+        }).toList();
+    return(itemsToDisplay);
   }
 
   /// Builds the list display from the given list of [DropdownMenuItem] along with the [bool] indicating whether the item is selected or not and the [int] as the index in the [selectedItems] list.
@@ -2170,25 +2406,11 @@ class _DropdownDialogState<T> extends State<DropdownDialog> {
 
   /// Displays the list of items filtered based on the search terms with pagination.
   Widget listWithPagination() {
-    List<int> pagedShownIndexes = [];
     bool displayPages = true;
     if (!futureSearch) {
       if (widget.itemsPerPage == null ||
           widget.itemsPerPage! >= shownIndexes.length) {
-        pagedShownIndexes = shownIndexes;
         displayPages = false;
-      } else {
-        if (widget.currentPage!.value < 1 ||
-            widget.currentPage!.value >
-                (shownIndexes.length / widget.itemsPerPage!).ceil()) {
-          widget.currentPage!.value = 1;
-        }
-        for (int i = widget.itemsPerPage! * (widget.currentPage!.value - 1);
-        i < widget.itemsPerPage! * (widget.currentPage!.value) &&
-            i < shownIndexes.length;
-        i++) {
-          pagedShownIndexes.add(shownIndexes[i]);
-        }
       }
     }
     else {
@@ -2267,14 +2489,7 @@ class _DropdownDialogState<T> extends State<DropdownDialog> {
       );
     }
 
-
-    itemsToDisplay =
-        pagedShownIndexes.map<Tuple3<int, DropdownMenuItem<T>, bool>>((
-            int index) {
-          return (Tuple3<int, DropdownMenuItem<T>, bool>(
-              index, widget.items![index] as DropdownMenuItem<T>,
-              isItemSelected(index, widget.items![index].value)));
-        }).toList();
+    itemsToDisplay = nonFutureItemsToDisplay();
     Widget scrollBar = listDisplay(itemsToDisplay);
 
     if (!displayPages) {

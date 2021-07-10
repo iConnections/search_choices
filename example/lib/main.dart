@@ -58,6 +58,7 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   bool asTabs = false;
   String? selectedValueSingleDialog;
+  String? selectedValueSingleDropdown;
   String? selectedValueSingleDoneButtonDialog;
   String? selectedValueSingleMenu;
   String? selectedValueSingleDialogCustomKeyboard;
@@ -78,6 +79,7 @@ class _MyAppState extends State<MyApp> {
   List<int> selectedItemsMultiDialogSelectAllNoneWoClear = [];
   List<int> editableSelectedItems = [];
   List<DropdownMenuItem> items = [];
+  List<DropdownMenuItem> dropdownItems = [];
   List<DropdownMenuItem> editableItems = [];
   List<DropdownMenuItem> futureItems = [];
   final _formKey = GlobalKey<FormState>();
@@ -119,6 +121,43 @@ class _MyAppState extends State<MyApp> {
             -1) {
           items.add(DropdownMenuItem(
             child: Text(wordPair),
+            value: wordPair,
+          ));
+        }
+        wordPair = "";
+      }
+    });
+    wordPair = "";
+    loremIpsum
+        .toLowerCase()
+        .replaceAll(",", "")
+        .replaceAll(".", "")
+        .split(" ")
+        .forEach((word) {
+      if (wordPair.isEmpty) {
+        wordPair = word + " ";
+      } else {
+        wordPair += word;
+        if (dropdownItems.indexWhere((item) {
+          return (item.value == wordPair);
+        }) ==
+            -1) {
+          dropdownItems.add(DropdownMenuItem(
+            child:
+            Card(
+              color: Colors.blue.shade50,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                  side: BorderSide(
+                    color: Colors.brown,
+                    width: 0.5,
+                  ),
+                ),
+                margin: EdgeInsets.all(12),
+                child: Padding(
+                  padding: const EdgeInsets.all(8),
+                  child: Text(wordPair,style:TextStyle(fontSize: 16,color: Colors.black,fontFamily: "roboto",fontStyle: FontStyle.normal,fontWeight: FontWeight.normal,decoration: TextDecoration.none,),),
+                )),
             value: wordPair,
           ));
         }
@@ -231,6 +270,18 @@ class _MyAppState extends State<MyApp> {
               selectedItems.length.toString() + ')'}"
               : "Save without selection");
         },
+        isExpanded: true,
+      ),
+      "Single dropdown": SearchChoices.single(
+        items: dropdownItems,
+        value: selectedValueSingleDropdown,
+        hint: "Select one",
+        onChanged: (value) {
+          setState(() {
+            selectedValueSingleDropdown = value;
+          });
+        },
+        mode:SearchChoicesMode.dropdown,
         isExpanded: true,
       ),
       "Single done button dialog": SearchChoices.single(
@@ -1472,6 +1523,7 @@ class _MyAppState extends State<MyApp> {
           ? DefaultTabController(
         length: widgets.length,
         child: Scaffold(
+          resizeToAvoidBottomInset: true,
           appBar: AppBar(
             title: const Text(appTitle),
             actions: appBarActions,
@@ -1511,6 +1563,7 @@ class _MyAppState extends State<MyApp> {
         ),
       )
           : Scaffold(
+        resizeToAvoidBottomInset: true,
         appBar: AppBar(
           title: const Text(appTitle),
           actions: appBarActions,
@@ -1519,7 +1572,6 @@ class _MyAppState extends State<MyApp> {
           scrollDirection: Axis.vertical,
           child: Column(
             children:
-//            [
               widgets
                   .map((k, v) {
                 return (MapEntry(
@@ -1545,11 +1597,7 @@ class _MyAppState extends State<MyApp> {
                             )))));
               })
                   .values
-                  .toList()
-//                  .last
-//            ]
-//                      .first]
-            ,
+                  .toList(),
           ),
         ),
       ),
