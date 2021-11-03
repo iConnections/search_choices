@@ -2208,7 +2208,7 @@ class _DropdownDialogState<T> extends State<DropdownDialog> {
             textDirection:
                 widget.rightToLeft ? TextDirection.rtl : TextDirection.ltr,
             controller: txtSearch,
-            decoration: widget.searchInputDecoration != null
+            decoration: widget?.searchInputDecoration != null
                 ? widget.searchInputDecoration
                 : widget.rightToLeft
                     ? InputDecoration(
