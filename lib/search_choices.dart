@@ -1604,7 +1604,6 @@ class _DropdownDialogState<T> extends State<DropdownDialog> {
   TextStyle defaultButtonStyle = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w500,
-    color: isDark ? Color(0xFF793392) : Color(0xFF692B7E),
   );
   List<int> shownIndexes = [];
   Function? searchFn;
@@ -2684,7 +2683,10 @@ class _DropdownDialogState<T> extends State<DropdownDialog> {
                         textDirection: widget.rightToLeft
                             ? TextDirection.rtl
                             : TextDirection.ltr,
-                        style: defaultButtonStyle,
+                        style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: widget.isDark ? Color(0xFF793392) : Color(0xFF692B7E),
                         overflow: TextOverflow.ellipsis,
                       )),
                 )
