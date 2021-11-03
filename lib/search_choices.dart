@@ -341,7 +341,6 @@ class SearchChoices<T> extends StatefulWidget {
     BuildContext dropDownContext,
   )? buildDropDownDialog;
 
-    final bool? isDark;
   /// [searchInputDecoration] [InputDecoration] sets the search bar decoration.
   final InputDecoration? searchInputDecoration;
 
