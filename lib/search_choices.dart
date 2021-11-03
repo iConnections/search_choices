@@ -1604,6 +1604,7 @@ class _DropdownDialogState<T> extends State<DropdownDialog> {
   TextStyle defaultButtonStyle = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w500,
+    color: widget.isDark ? Color(0xFF793392) : Color(0xFF692B7E),
   );
   List<int> shownIndexes = [];
   Function? searchFn;
@@ -2215,6 +2216,7 @@ class _DropdownDialogState<T> extends State<DropdownDialog> {
                         suffixIcon: Icon(
                           Icons.search,
                           size: 24,
+                           color: widget.isDark ? Color(0xFF793392) : Color(0xFF692B7E),
                         ),
                         contentPadding: EdgeInsets.symmetric(vertical: 12),
                       )
@@ -2222,6 +2224,7 @@ class _DropdownDialogState<T> extends State<DropdownDialog> {
                         prefixIcon: Icon(
                           Icons.search,
                           size: 24,
+                            color: widget.isDark ? Color(0xFF793392) : Color(0xFF692B7E),
                         ),
                         contentPadding: EdgeInsets.symmetric(vertical: 12),
                       ),
