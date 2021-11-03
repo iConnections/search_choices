@@ -225,6 +225,8 @@ class SearchChoices<T> extends StatefulWidget {
 
   /// [isExpanded] can be necessary to avoid pixel overflows (zebra symptom).
   final bool isExpanded;
+    
+    final bool isDark;
 
   /// [isCaseSensitiveSearch] only used when searchFn is not specified.
   final bool isCaseSensitiveSearch;
