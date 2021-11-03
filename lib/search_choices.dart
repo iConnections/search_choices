@@ -226,7 +226,7 @@ class SearchChoices<T> extends StatefulWidget {
   /// [isExpanded] can be necessary to avoid pixel overflows (zebra symptom).
   final bool isExpanded;
     
-    final bool? isDark;
+    final bool isDark;
 
   /// [isCaseSensitiveSearch] only used when searchFn is not specified.
   final bool isCaseSensitiveSearch;
@@ -557,7 +557,7 @@ class SearchChoices<T> extends StatefulWidget {
       BuildContext dropDownContext,
     )?
         buildDropDownDialog,
-      bool? isDark,
+      bool isDark = false,
     InputDecoration? searchInputDecoration,
     int? itemsPerPage,
     PointerThisPlease<int>? currentPage,
@@ -785,7 +785,7 @@ class SearchChoices<T> extends StatefulWidget {
     )?
         buildDropDownDialog,
     InputDecoration? searchInputDecoration,
-      bool? isDark,
+      bool isDark = false,
     int? itemsPerPage,
     PointerThisPlease<int>? currentPage,
     Widget Function(Widget listWidget, int totalFilteredItemsNb,
@@ -895,7 +895,7 @@ class SearchChoices<T> extends StatefulWidget {
     this.padding = 10,
     this.setOpenDialog,
     this.buildDropDownDialog,
-      this.isDark,
+      this.isDark = false,
     this.searchInputDecoration,
     this.itemsPerPage,
     this.currentPage,
@@ -1519,7 +1519,7 @@ class DropdownDialog<T> extends StatefulWidget {
   /// See SearchChoices class.
   final InputDecoration? searchInputDecoration;
     
-    final bool? isDark;
+    final bool isDark;
 
   /// See SearchChoices class.
   final int? itemsPerPage;
@@ -1583,7 +1583,7 @@ class DropdownDialog<T> extends StatefulWidget {
     required this.autofocus,
     required this.initialSearchTerms,
     this.buildDropDownDialog,
-      this.isDark,
+      this.isDark = false,
     this.searchInputDecoration,
     this.itemsPerPage,
     this.currentPage,
@@ -2208,7 +2208,7 @@ class _DropdownDialogState<T> extends State<DropdownDialog> {
             textDirection:
                 widget.rightToLeft ? TextDirection.rtl : TextDirection.ltr,
             controller: txtSearch,
-            decoration: widget?.searchInputDecoration != null
+            decoration: widget.searchInputDecoration != null
                 ? widget.searchInputDecoration
                 : widget.rightToLeft
                     ? InputDecoration(
