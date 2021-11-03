@@ -339,6 +339,7 @@ class SearchChoices<T> extends StatefulWidget {
     BuildContext dropDownContext,
   )? buildDropDownDialog;
 
+    final bool? isDark;
   /// [searchInputDecoration] [InputDecoration] sets the search bar decoration.
   final InputDecoration? searchInputDecoration;
 
@@ -555,6 +556,7 @@ class SearchChoices<T> extends StatefulWidget {
       BuildContext dropDownContext,
     )?
         buildDropDownDialog,
+      bool? isDark,
     InputDecoration? searchInputDecoration,
     int? itemsPerPage,
     PointerThisPlease<int>? currentPage,
@@ -611,6 +613,7 @@ class SearchChoices<T> extends StatefulWidget {
       padding: padding,
       setOpenDialog: setOpenDialog,
       buildDropDownDialog: buildDropDownDialog,
+        isDark: isDark,
       searchInputDecoration: searchInputDecoration,
       itemsPerPage: itemsPerPage,
       currentPage: currentPage,
@@ -781,6 +784,7 @@ class SearchChoices<T> extends StatefulWidget {
     )?
         buildDropDownDialog,
     InputDecoration? searchInputDecoration,
+      bool? isDark,
     int? itemsPerPage,
     PointerThisPlease<int>? currentPage,
     Widget Function(Widget listWidget, int totalFilteredItemsNb,
@@ -837,6 +841,7 @@ class SearchChoices<T> extends StatefulWidget {
       padding: padding,
       setOpenDialog: setOpenDialog,
       buildDropDownDialog: buildDropDownDialog,
+        isDark: isDark,
       searchInputDecoration: searchInputDecoration,
       itemsPerPage: itemsPerPage,
       currentPage: currentPage,
@@ -889,6 +894,7 @@ class SearchChoices<T> extends StatefulWidget {
     this.padding = 10,
     this.setOpenDialog,
     this.buildDropDownDialog,
+      this.isDark,
     this.searchInputDecoration,
     this.itemsPerPage,
     this.currentPage,
@@ -1171,6 +1177,7 @@ class _SearchChoicesState<T> extends State<SearchChoices<T>> {
         initialSearchTerms: searchTerms,
         buildDropDownDialog: widget.buildDropDownDialog,
         searchInputDecoration: widget.searchInputDecoration,
+          isDark: widget.isDark,
         itemsPerPage: widget.itemsPerPage,
         currentPage: widget.currentPage,
         customPaginationDisplay: widget.customPaginationDisplay,
@@ -1510,6 +1517,8 @@ class DropdownDialog<T> extends StatefulWidget {
 
   /// See SearchChoices class.
   final InputDecoration? searchInputDecoration;
+    
+    final bool? isDark;
 
   /// See SearchChoices class.
   final int? itemsPerPage;
@@ -1573,6 +1582,7 @@ class DropdownDialog<T> extends StatefulWidget {
     required this.autofocus,
     required this.initialSearchTerms,
     this.buildDropDownDialog,
+      this.isDark,
     this.searchInputDecoration,
     this.itemsPerPage,
     this.currentPage,
@@ -2193,6 +2203,7 @@ class _DropdownDialogState<T> extends State<DropdownDialog> {
       child: Stack(
         children: <Widget>[
           TextField(
+              cursorColor: widget.isDark ? Color(0xFF793392) : Color(0xFF692B7E),
             textDirection:
                 widget.rightToLeft ? TextDirection.rtl : TextDirection.ltr,
             controller: txtSearch,
