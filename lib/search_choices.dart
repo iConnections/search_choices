@@ -2686,9 +2686,9 @@ class _DropdownDialogState<T> extends State<DropdownDialog> {
                         style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w500,
-                            color: widget.isDark ? Color(0xFF793392) : Color(0xFF692B7E),
+                            color: widget.isDark ? Color(0xFF793392) : Color(0xFF692B7E)),
                         overflow: TextOverflow.ellipsis,)
-                      )),
+                      ),
                 )
               ],
             ),
