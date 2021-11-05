@@ -1914,7 +1914,7 @@ class _DropdownDialogState<T> extends State<DropdownDialog> {
                             child: Icon(
                               Icons.clear,
                               size: 17,
-                                widget.isDark ? Color(0xFF793392) : Color(0xFF692B7E),
+                                color: widget.isDark ? Color(0xFF793392) : Color(0xFF692B7E),
                             )),
                       ),
                     )));
