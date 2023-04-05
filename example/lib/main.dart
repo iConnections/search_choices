@@ -1,11 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart' show kIsWeb;
-
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:http/http.dart';
+import 'package:flutster/flutster.dart';
 
 import 'package:search_choices/search_choices.dart';
+import 'package:search_choices_example/custom_object_sample.dart';
 
 class ExampleNumber {
   int number;
@@ -35,28 +35,47 @@ class ExampleNumber {
 
   ExampleNumber(this.number);
 
+  @override
   String toString() {
     return ("$number $numberString");
   }
 
   static List<ExampleNumber> get list {
-    return (map.keys.map((num) {
-      return (ExampleNumber(num));
+    return (map.keys.map((exampleNumber) {
+      return (ExampleNumber(exampleNumber));
     })).toList();
   }
 }
 
-void main() => runApp(MyApp());
+void main({bool testing = false}) {
+  const flutsterKey = String.fromEnvironment("flutsterKey");
+  const flutsterUser = String.fromEnvironment("flutsterUser");
+  const flutsterUrl = String.fromEnvironment("flutsterUrl");
+  FlutsterTestRecord.defaultRecord.apiUrl = flutsterUrl;
+  FlutsterTestRecord.defaultRecord.apiUser = flutsterUser;
+  FlutsterTestRecord.defaultRecord.apiKey = flutsterKey;
+  FlutsterTestRecord.defaultRecord.active = testing;
+  if (testing) {
+    SearchChoices.dialogBoxMenuWrapper = (Widget menuWidget) {
+      return (FlutsterTestRecorder(
+        name: "wrappedMenuWidget",
+        child: menuWidget,
+      ));
+    };
+  }
+
+  return runApp(const MyApp());
+}
 
 class MyApp extends StatefulWidget {
-  static final navKey = new GlobalKey<NavigatorState>();
+  static final navKey = GlobalKey<NavigatorState>();
 
   const MyApp({Key? navKey}) : super(key: navKey);
   @override
-  _MyAppState createState() => _MyAppState();
+  MyAppState createState() => MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class MyAppState extends State<MyApp> {
   bool asTabs = false;
   String? selectedValueSingleDialog;
   String? selectedValueSingleDoneButtonDialog;
@@ -64,6 +83,7 @@ class _MyAppState extends State<MyApp> {
   String? selectedValueSingleDialogCustomKeyboard;
   String? selectedValueSingleDialogOverflow;
   String? selectedValueSingleDialogEditableItems;
+  String? selectedValueSingleMenuEditableItems;
   String? selectedValueSingleDialogDarkMode;
   String? selectedValueSingleDialogEllipsis;
   String? selectedValueSingleDialogRightToLeft;
@@ -83,11 +103,12 @@ class _MyAppState extends State<MyApp> {
   List<DropdownMenuItem> editableItems = [];
   List<DropdownMenuItem> futureItems = [];
   final _formKey = GlobalKey<FormState>();
+  final _formKeyForValidator = GlobalKey<FormState>();
   String inputString = "";
   TextFormField? input;
   List<DropdownMenuItem<ExampleNumber>> numberItems =
       ExampleNumber.list.map((exNum) {
-    return (DropdownMenuItem(child: Text(exNum.numberString), value: exNum));
+    return (DropdownMenuItem(value: exNum, child: Text(exNum.numberString)));
   }).toList();
   List<int> selectedItemsMultiSelect3Menu = [];
   List<int> selectedItemsMultiDialogWithCountAndWrap = [];
@@ -105,6 +126,13 @@ class _MyAppState extends State<MyApp> {
 
   bool noResult = false;
 
+  String widgetSearchString = "";
+
+  TextEditingController widgetSearchController = TextEditingController();
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
+
+  String? formResult;
+
   @override
   void initState() {
     String wordPair = "";
@@ -115,7 +143,7 @@ class _MyAppState extends State<MyApp> {
         .split(" ")
         .forEach((word) {
       if (wordPair.isEmpty) {
-        wordPair = word + " ";
+        wordPair = "$word ";
       } else {
         wordPair += word;
         if (items.indexWhere((item) {
@@ -123,8 +151,8 @@ class _MyAppState extends State<MyApp> {
             }) ==
             -1) {
           items.add(DropdownMenuItem(
-            child: Text(wordPair),
             value: wordPair,
+            child: Text(wordPair),
           ));
         }
         wordPair = "";
@@ -147,16 +175,43 @@ class _MyAppState extends State<MyApp> {
 
   List<Widget> get appBarActions {
     return ([
-      Center(child: Text("Tabs:")),
-      Switch(
-        activeColor: Colors.white,
-        value: asTabs,
-        onChanged: (value) {
-          setState(() {
-            asTabs = value;
-          });
-        },
-      )
+      FlutsterTestRecord.defaultRecord.active
+          ? SizedBox.shrink()
+          : ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  SearchChoices.dialogBoxMenuWrapper = (Widget menuWidget) {
+                    return (FlutsterTestRecorder(
+                      name: "wrappedMenuWidget",
+                      child: menuWidget,
+                    ));
+                  };
+                  FlutsterTestRecord.defaultRecord.active = true;
+                });
+              },
+              child: Text(
+                "Test",
+              ),
+            ),
+      Column(
+        children: [
+          Text(
+            "Tabs:",
+          ),
+          SizedBox(
+            height: 30,
+            child: Switch(
+              activeColor: Colors.white,
+              value: asTabs,
+              onChanged: (value) {
+                setState(() {
+                  asTabs = value;
+                });
+              },
+            ),
+          ),
+        ],
+      ),
     ]);
   }
 
@@ -164,38 +219,45 @@ class _MyAppState extends State<MyApp> {
     return await showDialog(
       context: MyApp.navKey.currentState?.overlay?.context ?? context,
       builder: (BuildContext alertContext) {
-        return (AlertDialog(
-          title: Text("Add an item"),
+        Widget dialogWidget = AlertDialog(
+          title: const Text("Add an item"),
           content: Form(
             key: _formKey,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                input ?? SizedBox.shrink(),
+                input ?? const SizedBox.shrink(),
                 TextButton(
                   onPressed: () {
                     if (_formKey.currentState?.validate() ?? false) {
                       setState(() {
                         editableItems.add(DropdownMenuItem(
-                          child: Text(inputString),
                           value: inputString,
+                          child: Text(inputString),
                         ));
                       });
                       Navigator.pop(alertContext, inputString);
                     }
                   },
-                  child: Text("Ok"),
+                  child: const Text("Ok"),
                 ),
                 TextButton(
                   onPressed: () {
                     Navigator.pop(alertContext, null);
                   },
-                  child: Text("Cancel"),
+                  child: const Text("Cancel"),
                 ),
               ],
             ),
           ),
-        ));
+        );
+        if (FlutsterTestRecord.defaultRecord.active) {
+          dialogWidget = FlutsterTestRecorder(
+            name: "addItemDialog",
+            child: dialogWidget,
+          );
+        }
+        return (dialogWidget);
       },
     );
   }
@@ -219,8 +281,8 @@ class _MyAppState extends State<MyApp> {
       "Multi dialog": SearchChoices.multiple(
         items: items,
         selectedItems: selectedItemsMultiDialog,
-        hint: Padding(
-          padding: const EdgeInsets.all(12.0),
+        hint: const Padding(
+          padding: EdgeInsets.all(12.0),
           child: Text("Select any"),
         ),
         searchHint: "Select any",
@@ -231,7 +293,7 @@ class _MyAppState extends State<MyApp> {
         },
         closeButton: (selectedItems) {
           return (selectedItems.isNotEmpty
-              ? "Save ${selectedItems.length == 1 ? '"' + items[selectedItems.first].value.toString() + '"' : '(' + selectedItems.length.toString() + ')'}"
+              ? "Save ${selectedItems.length == 1 ? '"${items[selectedItems.first].value}"' : '(${selectedItems.length})'}"
               : "Save without selection");
         },
         isExpanded: true,
@@ -250,15 +312,15 @@ class _MyAppState extends State<MyApp> {
         displayItem: (item, selected) {
           return (Row(children: [
             selected
-                ? Icon(
+                ? const Icon(
                     Icons.radio_button_checked,
                     color: Colors.grey,
                   )
-                : Icon(
+                : const Icon(
                     Icons.radio_button_unchecked,
                     color: Colors.grey,
                   ),
-            SizedBox(width: 7),
+            const SizedBox(width: 7),
             Expanded(
               child: item,
             ),
@@ -269,8 +331,8 @@ class _MyAppState extends State<MyApp> {
       "Multi custom display dialog": SearchChoices.multiple(
         items: items,
         selectedItems: selectedItemsMultiCustomDisplayDialog,
-        hint: Padding(
-          padding: const EdgeInsets.all(12.0),
+        hint: const Padding(
+          padding: EdgeInsets.all(12.0),
           child: Text("Select any"),
         ),
         searchHint: "Select any",
@@ -282,15 +344,15 @@ class _MyAppState extends State<MyApp> {
         displayItem: (item, selected) {
           return (Row(children: [
             selected
-                ? Icon(
+                ? const Icon(
                     Icons.check,
                     color: Colors.green,
                   )
-                : Icon(
+                : const Icon(
                     Icons.check_box_outline_blank,
                     color: Colors.grey,
                   ),
-            SizedBox(width: 7),
+            const SizedBox(width: 7),
             Expanded(
               child: item,
             ),
@@ -301,12 +363,12 @@ class _MyAppState extends State<MyApp> {
               child: Card(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
-                    side: BorderSide(
+                    side: const BorderSide(
                       color: Colors.brown,
                       width: 0.5,
                     ),
                   ),
-                  margin: EdgeInsets.all(12),
+                  margin: const EdgeInsets.all(12),
                   child: Padding(
                     padding: const EdgeInsets.all(8),
                     child: Text(item.toString()),
@@ -318,10 +380,10 @@ class _MyAppState extends State<MyApp> {
                 Navigator.pop(doneContext);
                 setState(() {});
               },
-              child: Text("Save")));
+              child: const Text("Save")));
         },
         closeButton: null,
-        style: TextStyle(fontStyle: FontStyle.italic),
+        style: const TextStyle(fontStyle: FontStyle.italic),
         searchFn: (String keyword, items) {
           List<int> ret = [];
           if (items != null && keyword.isNotEmpty) {
@@ -345,25 +407,33 @@ class _MyAppState extends State<MyApp> {
           }
           return (ret);
         },
-        clearIcon: Icon(Icons.clear_all),
-        icon: Icon(Icons.arrow_drop_down_circle),
+        clearIcon: const Icon(Icons.clear_all),
+        icon: const Icon(Icons.arrow_drop_down_circle),
         label: "Label for multi",
         underline: Container(
           height: 1.0,
-          decoration: BoxDecoration(
+          decoration: const BoxDecoration(
               border:
                   Border(bottom: BorderSide(color: Colors.teal, width: 3.0))),
         ),
         iconDisabledColor: Colors.brown,
         iconEnabledColor: Colors.indigo,
+        dropDownDialogPadding: const EdgeInsets.symmetric(
+          vertical: 80,
+          horizontal: 80,
+        ),
         isExpanded: true,
+        clearSearchIcon: const Icon(
+          Icons.backspace,
+          color: Colors.teal,
+        ),
       ),
       "Multi select 3 dialog": SearchChoices.multiple(
         items: items,
         selectedItems: selectedItemsMultiSelect3Dialog,
         hint: "Select 3 items",
         searchHint: "Select 3",
-        validator: (selectedItemsForValidator) {
+        listValidator: (List<dynamic> selectedItemsForValidator) {
           if (selectedItemsForValidator.length != 3) {
             return ("Must select 3");
           }
@@ -382,7 +452,7 @@ class _MyAppState extends State<MyApp> {
                       Navigator.pop(doneContext);
                       setState(() {});
                     },
-              child: Text("Save")));
+              child: const Text("Save")));
         },
         closeButton: (selectedItemsClose) {
           return (selectedItemsClose.length == 3 ? "Ok" : null);
@@ -401,7 +471,7 @@ class _MyAppState extends State<MyApp> {
         },
         dialogBox: false,
         isExpanded: true,
-        menuConstraints: BoxConstraints.tight(Size.fromHeight(350)),
+        menuConstraints: BoxConstraints.tight(const Size.fromHeight(350)),
       ),
       "Multi menu": SearchChoices.multiple(
         items: items,
@@ -409,7 +479,7 @@ class _MyAppState extends State<MyApp> {
         hint: "Select any",
         searchHint: "",
         doneButton: "Close",
-        closeButton: SizedBox.shrink(),
+        closeButton: const SizedBox.shrink(),
         onChanged: (value) {
           setState(() {
             selectedItemsMultiMenu = value;
@@ -417,7 +487,7 @@ class _MyAppState extends State<MyApp> {
         },
         dialogBox: false,
         isExpanded: true,
-        menuConstraints: BoxConstraints.tight(Size.fromHeight(350)),
+        menuConstraints: BoxConstraints.tight(const Size.fromHeight(350)),
       ),
       "Multi menu select all/none": SearchChoices.multiple(
         items: items,
@@ -443,7 +513,7 @@ class _MyAppState extends State<MyApp> {
                     });
                     updateParent(selectedItemsClose);
                   },
-                  child: Text("Select all")),
+                  child: const Text("Select all")),
               ElevatedButton(
                   onPressed: () {
                     setState(() {
@@ -451,12 +521,12 @@ class _MyAppState extends State<MyApp> {
                     });
                     updateParent(selectedItemsClose);
                   },
-                  child: Text("Select none")),
+                  child: const Text("Select none")),
             ],
           );
         },
         isExpanded: true,
-        menuConstraints: BoxConstraints.tight(Size.fromHeight(350)),
+        menuConstraints: BoxConstraints.tight(const Size.fromHeight(350)),
       ),
       "Multi dialog select all/none without clear": SearchChoices.multiple(
         items: items,
@@ -483,7 +553,7 @@ class _MyAppState extends State<MyApp> {
                     });
                     updateParent(selectedItemsClose);
                   },
-                  child: Text("Select all")),
+                  child: const Text("Select all")),
               ElevatedButton(
                   onPressed: () {
                     setState(() {
@@ -491,7 +561,7 @@ class _MyAppState extends State<MyApp> {
                     });
                     updateParent(selectedItemsClose);
                   },
-                  child: Text("Select none")),
+                  child: const Text("Select none")),
             ],
           );
         },
@@ -500,8 +570,8 @@ class _MyAppState extends State<MyApp> {
       "Single dialog custom keyboard": SearchChoices.single(
         items: Iterable<int>.generate(20).toList().map((i) {
           return (DropdownMenuItem(
-            child: Text(i.toString()),
             value: i.toString(),
+            child: Text(i.toString()),
           ));
         }).toList(),
         value: selectedValueSingleDialogCustomKeyboard,
@@ -530,12 +600,12 @@ class _MyAppState extends State<MyApp> {
         isExpanded: true,
       ),
       "Single dialog overflow": SearchChoices.single(
-        items: [
+        items: const [
           DropdownMenuItem(
-            child: Text(
-                "way too long text for a smartphone at least one that goes in a normal sized pair of trousers but maybe not for a gigantic screen like there is one at my cousin's home in a very remote country where I wouldn't want to go right now"),
             value:
                 "way too long text for a smartphone at least one that goes in a normal sized pair of trousers but maybe not for a gigantic screen like there is one at my cousin's home in a very remote country where I wouldn't want to go right now",
+            child: Text(
+                "way too long text for a smartphone at least one that goes in a normal sized pair of trousers but maybe not for a gigantic screen like there is one at my cousin's home in a very remote country where I wouldn't want to go right now"),
           )
         ],
         value: selectedValueSingleDialogOverflow,
@@ -550,10 +620,10 @@ class _MyAppState extends State<MyApp> {
         isExpanded: true,
       ),
       "Single dialog readOnly": SearchChoices.single(
-        items: [
+        items: const [
           DropdownMenuItem(
-            child: Text("one item"),
             value: "one item",
+            child: Text("one item"),
           )
         ],
         value: "one item",
@@ -568,10 +638,10 @@ class _MyAppState extends State<MyApp> {
         readOnly: true,
       ),
       "Single dialog disabled": SearchChoices.single(
-        items: [
+        items: const [
           DropdownMenuItem(
-            child: Text("one item"),
             value: "one item",
+            child: Text("one item"),
           )
         ],
         value: "one item",
@@ -594,7 +664,7 @@ class _MyAppState extends State<MyApp> {
                 updateParent(value);
               });
             },
-            child: Text("No choice, click to add one"),
+            child: const Text("No choice, click to add one"),
           ));
         },
         closeButton:
@@ -615,12 +685,12 @@ class _MyAppState extends State<MyApp> {
                       }
                     });
                   },
-                  child: Text("Add and select item"),
+                  child: const Text("Add and select item"),
                 ));
         },
         onChanged: (String? value) {
           setState(() {
-            if (!(value is NotGiven)) {
+            if (value is! NotGiven) {
               selectedValueSingleDialogEditableItems = value;
             }
           });
@@ -628,20 +698,20 @@ class _MyAppState extends State<MyApp> {
         displayItem: (item, selected, Function updateParent) {
           return (Row(children: [
             selected
-                ? Icon(
+                ? const Icon(
                     Icons.check,
                     color: Colors.green,
                   )
-                : Icon(
+                : const Icon(
                     Icons.check_box_outline_blank,
                     color: Colors.transparent,
                   ),
-            SizedBox(width: 7),
+            const SizedBox(width: 7),
             Expanded(
               child: item,
             ),
             IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.delete,
                 color: Colors.red,
               ),
@@ -656,6 +726,87 @@ class _MyAppState extends State<MyApp> {
         dialogBox: true,
         isExpanded: true,
         doneButton: "Done",
+      ),
+      "Single menu editable items": SearchChoices.single(
+        items: editableItems,
+        value: selectedValueSingleMenuEditableItems,
+        hint: "Select one",
+        searchHint: "Select one",
+        disabledHint: (Function updateParent) {
+          return (TextButton(
+            onPressed: () {
+              addItemDialog().then((value) async {
+                updateParent(value);
+              });
+            },
+            child: const Text("No choice, click to add one"),
+          ));
+        },
+        closeButton:
+            (String? value, BuildContext closeContext, Function updateParent) {
+          return (editableItems.length >= 100
+              ? "Close"
+              : TextButton(
+                  onPressed: () {
+                    addItemDialog().then((value) async {
+                      if (value != null &&
+                          editableItems.indexWhere(
+                                  (element) => element.value == value) !=
+                              -1) {
+                        updateParent(value, true);
+                      }
+                    });
+                  },
+                  child: const Text("Add and select item"),
+                ));
+        },
+        onChanged: (String? value, Function? pop) {
+          setState(() {
+            if (value is! NotGiven) {
+              selectedValueSingleMenuEditableItems = value;
+            }
+          });
+          if (pop != null && value is! NotGiven && value != null) {
+            pop();
+          }
+        },
+        displayItem: (DropdownMenuItem item, selected, Function updateParent) {
+          bool deleteRequested = false;
+          return ListTile(
+            leading: selected
+                ? const Icon(
+                    Icons.check,
+                    color: Colors.green,
+                  )
+                : const Icon(
+                    Icons.check_box_outline_blank,
+                    color: Colors.transparent,
+                  ),
+            title: item,
+            trailing: IconButton(
+              icon: const Icon(
+                Icons.delete,
+                color: Colors.red,
+              ),
+              onPressed: () {
+                deleteRequested = true;
+                editableItems.removeWhere((element) => item == element);
+                updateParent(selected ? null : const NotGiven(), false);
+                setState(() {});
+              },
+            ),
+            onTap: () {
+              if (!deleteRequested) {
+                updateParent(item.value, true);
+              }
+            },
+            horizontalTitleGap: 0,
+          );
+        },
+        dialogBox: false,
+        isExpanded: true,
+        doneButton: "Done",
+        menuConstraints: BoxConstraints.tight(const Size.fromHeight(350)),
       ),
       "Multi dialog editable items": SearchChoices.multiple(
         items: editableItems,
@@ -672,7 +823,7 @@ class _MyAppState extends State<MyApp> {
                 }
               });
             },
-            child: Text("No choice, click to add one"),
+            child: const Text("No choice, click to add one"),
           ));
         },
         closeButton: (List<int> values, BuildContext closeContext,
@@ -695,12 +846,12 @@ class _MyAppState extends State<MyApp> {
                       }
                     });
                   },
-                  child: Text("Add and select item"),
+                  child: const Text("Add and select item"),
                 ));
         },
         onChanged: (values) {
           setState(() {
-            if (!(values is NotGiven)) {
+            if (values is! NotGiven) {
               editableSelectedItems = values;
             }
           });
@@ -708,20 +859,20 @@ class _MyAppState extends State<MyApp> {
         displayItem: (item, selected, Function updateParent) {
           return (Row(children: [
             selected
-                ? Icon(
+                ? const Icon(
                     Icons.check_box,
                     color: Colors.black,
                   )
-                : Icon(
+                : const Icon(
                     Icons.check_box_outline_blank,
                     color: Colors.black,
                   ),
-            SizedBox(width: 7),
+            const SizedBox(width: 7),
             Expanded(
               child: item,
             ),
             IconButton(
-              icon: Icon(
+              icon: const Icon(
                 Icons.delete,
                 color: Colors.red,
               ),
@@ -750,29 +901,30 @@ class _MyAppState extends State<MyApp> {
         child: SearchChoices.single(
           items: items.map((item) {
             return (DropdownMenuItem(
+              value: item.value,
               child: Text(
                 item.value.toString(),
-                style: TextStyle(color: Colors.white),
+                style: const TextStyle(color: Colors.white),
               ),
-              value: item.value,
             ));
           }).toList(),
           value: selectedValueSingleDialogDarkMode,
-          hint: Text(
+          hint: const Text(
             "Select one",
             style: TextStyle(color: Colors.white),
           ),
-          searchHint: Text(
+          searchHint: const Text(
             "Select one",
             style: TextStyle(color: Colors.white),
           ),
-          style: TextStyle(color: Colors.white, backgroundColor: Colors.black),
+          style: const TextStyle(
+              color: Colors.white, backgroundColor: Colors.black),
           closeButton: TextButton(
             onPressed: () {
               Navigator.pop(
                   MyApp.navKey.currentState?.overlay?.context ?? context);
             },
-            child: Text(
+            child: const Text(
               "Close",
               style: TextStyle(color: Colors.white),
             ),
@@ -789,14 +941,14 @@ class _MyAppState extends State<MyApp> {
         ),
       ),
       "Single dialog ellipsis": SearchChoices.single(
-        items: [
+        items: const [
           DropdownMenuItem(
+            value:
+                "way too long text for a smartphone at least one that goes in a normal sized pair of trousers but maybe not for a gigantic screen like there is one at my cousin's home in a very remote country where I wouldn't want to go right now",
             child: Text(
               "way too long text for a smartphone at least one that goes in a normal sized pair of trousers but maybe not for a gigantic screen like there is one at my cousin's home in a very remote country where I wouldn't want to go right now",
               overflow: TextOverflow.ellipsis,
             ),
-            value:
-                "way too long text for a smartphone at least one that goes in a normal sized pair of trousers but maybe not for a gigantic screen like there is one at my cousin's home in a very remote country where I wouldn't want to go right now",
           )
         ],
         value: selectedValueSingleDialogEllipsis,
@@ -808,31 +960,44 @@ class _MyAppState extends State<MyApp> {
           });
         },
         selectedValueWidgetFn: (item) {
-          return (Text(
-            item,
-            overflow: TextOverflow.ellipsis,
-          ));
+          return DropdownMenuItem(
+            child: (Text(
+              item,
+              overflow: TextOverflow.ellipsis,
+            )),
+          );
         },
         dialogBox: true,
         isExpanded: true,
       ),
       "Single dialog right to left": SearchChoices.single(
-        items: ["طنجة", "فاس‎", "أكادير‎", "تزنيت‎", "آكــلــو", "سيدي بيبي"]
-            .map<DropdownMenuItem<String>>((string) {
+        items: [
+          "طنجة",
+          "فاس‎",
+          "أكادير‎",
+          "تزنيت‎",
+          "آكــلــو",
+          "سيدي بيبي",
+        ].map<DropdownMenuItem<String>>((string) {
           return (DropdownMenuItem<String>(
+            value: string,
             child: Text(
               string,
               textDirection: TextDirection.rtl,
             ),
-            value: string,
           ));
         }).toList(),
         value: selectedValueSingleDialogRightToLeft,
-        hint: Text(
-          "ختار",
+        hint: Row(
           textDirection: TextDirection.rtl,
+          children: const [
+            Text(
+              "ختار",
+              textDirection: TextDirection.rtl,
+            ),
+          ],
         ),
-        searchHint: Text(
+        searchHint: const Text(
           "ختار",
           textDirection: TextDirection.rtl,
         ),
@@ -841,9 +1006,14 @@ class _MyAppState extends State<MyApp> {
             Navigator.pop(
                 MyApp.navKey.currentState?.overlay?.context ?? context);
           },
-          child: Text(
-            "سدّ",
-            textDirection: TextDirection.rtl,
+          child: const SizedBox(
+            width: 50,
+            child: Text(
+              "سدّ",
+              maxLines: 1,
+              softWrap: false,
+              textDirection: TextDirection.rtl,
+            ),
           ),
         ),
         onChanged: (value) {
@@ -856,30 +1026,32 @@ class _MyAppState extends State<MyApp> {
         displayItem: (item, selected) {
           return (Row(textDirection: TextDirection.rtl, children: [
             selected
-                ? Icon(
+                ? const Icon(
                     Icons.radio_button_checked,
                     color: Colors.grey,
                   )
-                : Icon(
+                : const Icon(
                     Icons.radio_button_unchecked,
                     color: Colors.grey,
                   ),
-            SizedBox(width: 7),
+            const SizedBox(width: 7),
             item,
-            Expanded(
+            const Expanded(
               child: SizedBox.shrink(),
             ),
           ]));
         },
         selectedValueWidgetFn: (item) {
-          return Row(
-            textDirection: TextDirection.rtl,
-            children: <Widget>[
-              (Text(
-                item,
-                textDirection: TextDirection.rtl,
-              )),
-            ],
+          return DropdownMenuItem(
+            child: Row(
+              textDirection: TextDirection.rtl,
+              children: <Widget>[
+                (Text(
+                  item,
+                  textDirection: TextDirection.rtl,
+                )),
+              ],
+            ),
           );
         },
       ),
@@ -888,10 +1060,10 @@ class _MyAppState extends State<MyApp> {
           SearchChoices.single(
             items: items,
             value: selectedValueUpdateFromOutsideThePlugin,
-            hint: Text('Select One'),
-            searchHint: new Text(
+            hint: const Text('Select One'),
+            searchHint: const Text(
               'Select One',
-              style: new TextStyle(fontSize: 20),
+              style: TextStyle(fontSize: 20),
             ),
             onChanged: (value) {
               setState(() {
@@ -901,7 +1073,7 @@ class _MyAppState extends State<MyApp> {
             isExpanded: true,
           ),
           TextButton(
-            child: Text("Select dolor sit"),
+            child: const Text("Select dolor sit"),
             onPressed: () {
               setState(() {
                 selectedValueUpdateFromOutsideThePlugin = "dolor sit";
@@ -915,7 +1087,7 @@ class _MyAppState extends State<MyApp> {
         selectedItems: selectedItemsMultiSelect3Menu,
         hint: "Select 3 items",
         searchHint: "Select 3",
-        validator: (selectedItemsForValidatorWithMenu) {
+        listValidator: (List<dynamic> selectedItemsForValidatorWithMenu) {
           if (selectedItemsForValidatorWithMenu.length != 3) {
             return ("Must select 3");
           }
@@ -928,7 +1100,7 @@ class _MyAppState extends State<MyApp> {
         },
         isExpanded: true,
         dialogBox: false,
-        menuConstraints: BoxConstraints.tight(Size.fromHeight(350)),
+        menuConstraints: BoxConstraints.tight(const Size.fromHeight(350)),
         autofocus: false,
       ),
       "Multi dialog with count and wrap": SearchChoices.multiple(
@@ -1008,9 +1180,10 @@ class _MyAppState extends State<MyApp> {
             padding: MediaQuery.of(dropDownContext).viewInsets,
             duration: const Duration(milliseconds: 300),
             child: Card(
-              margin: EdgeInsets.symmetric(vertical: 30, horizontal: 40),
+              margin: const EdgeInsets.symmetric(vertical: 30, horizontal: 40),
               child: Container(
-                padding: EdgeInsets.symmetric(vertical: 35, horizontal: 45),
+                padding:
+                    const EdgeInsets.symmetric(vertical: 35, horizontal: 45),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -1027,10 +1200,14 @@ class _MyAppState extends State<MyApp> {
           ));
         },
       ),
-      "Single dialog custom searchInputDecoration": SearchChoices.single(
+      "Single dialog custom decorations": SearchChoices.single(
         items: items,
         value: selectedValueSingleDialog,
-        hint: "Select one",
+        hint: const Padding(
+            padding: EdgeInsets.all(3),
+            child: DropdownMenuItem(
+              child: Text("Select one"),
+            )),
         searchHint: "Select one",
         onChanged: (value) {
           setState(() {
@@ -1038,8 +1215,26 @@ class _MyAppState extends State<MyApp> {
           });
         },
         isExpanded: true,
-        searchInputDecoration: InputDecoration(
-            icon: Icon(Icons.airline_seat_flat), border: OutlineInputBorder()),
+        searchInputDecoration: const InputDecoration(
+          icon: Icon(Icons.airline_seat_flat),
+          border: OutlineInputBorder(),
+        ),
+        fieldDecoration: BoxDecoration(
+          color: Colors.grey.shade200,
+          shape: BoxShape.rectangle,
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(
+            color: Colors.blueGrey,
+            width: 1,
+            style: BorderStyle.solid,
+          ),
+        ),
+        selectedValueWidgetFn: (selectedValue) {
+          return (Padding(
+            padding: const EdgeInsets.all(3),
+            child: DropdownMenuItem(child: Text(selectedValue)),
+          ));
+        },
       ),
       "Single dialog paged": SearchChoices.single(
         items: items,
@@ -1056,22 +1251,33 @@ class _MyAppState extends State<MyApp> {
         currentPage: currentPage,
       ),
       "Multi dialog paged rtl": SearchChoices.multiple(
-        items: ["طنجة", "فاس‎", "أكادير‎", "تزنيت‎", "آكــلــو", "سيدي بيبي"]
-            .map<DropdownMenuItem<String>>((string) {
-          return (DropdownMenuItem<String>(
+        items: [
+          "طنجة",
+          "فاس‎",
+          "أكادير‎",
+          "تزنيت‎",
+          "آكــلــو",
+          "سيدي بيبي",
+        ].map<DropdownMenuItem>((string) {
+          return (DropdownMenuItem(
+            value: string,
             child: Text(
               string,
               textDirection: TextDirection.rtl,
             ),
-            value: string,
           ));
         }).toList(),
         selectedItems: selectedItemsMultiDialogPaged,
-        hint: Text(
-          "ختار",
+        hint: Row(
           textDirection: TextDirection.rtl,
+          children: const [
+            Text(
+              "ختار",
+              textDirection: TextDirection.rtl,
+            ),
+          ],
         ),
-        searchHint: Text(
+        searchHint: const Text(
           "ختار",
           textDirection: TextDirection.rtl,
         ),
@@ -1080,9 +1286,14 @@ class _MyAppState extends State<MyApp> {
             Navigator.pop(
                 MyApp.navKey.currentState?.overlay?.context ?? context);
           },
-          child: Text(
-            "سدّ",
-            textDirection: TextDirection.rtl,
+          child: const SizedBox(
+            width: 50,
+            child: Text(
+              "سدّ",
+              maxLines: 1,
+              softWrap: false,
+              textDirection: TextDirection.rtl,
+            ),
           ),
         ),
         onChanged: (value) {
@@ -1094,31 +1305,34 @@ class _MyAppState extends State<MyApp> {
         rightToLeft: true,
         displayItem: (item, selected) {
           return (Row(textDirection: TextDirection.rtl, children: [
+            const SizedBox(width: 7),
             selected
-                ? Icon(
+                ? const Icon(
                     Icons.radio_button_checked,
                     color: Colors.grey,
                   )
-                : Icon(
+                : const Icon(
                     Icons.radio_button_unchecked,
                     color: Colors.grey,
                   ),
-            SizedBox(width: 7),
+            const SizedBox(width: 7),
             item,
-            Expanded(
+            const Expanded(
               child: SizedBox.shrink(),
             ),
           ]));
         },
         selectedValueWidgetFn: (item) {
-          return Row(
-            textDirection: TextDirection.rtl,
-            children: <Widget>[
-              (Text(
-                item,
-                textDirection: TextDirection.rtl,
-              )),
-            ],
+          return DropdownMenuItem(
+            child: Row(
+              textDirection: TextDirection.rtl,
+              children: <Widget>[
+                (Text(
+                  item,
+                  textDirection: TextDirection.rtl,
+                )),
+              ],
+            ),
           );
         },
         itemsPerPage: 5,
@@ -1146,8 +1360,8 @@ class _MyAppState extends State<MyApp> {
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(children: [
-                Text("Page:"),
-                SizedBox(
+                const Text("Page:"),
+                const SizedBox(
                   width: 10,
                 ),
                 Wrap(
@@ -1160,13 +1374,13 @@ class _MyAppState extends State<MyApp> {
                       width: (31 + 9 * (i + 1).toString().length) + 0.0,
                       height: 30.0,
                       child: ElevatedButton(
-                        child: Text("${i + 1}"),
                         onPressed: (i + 1) == currentPage.value
                             ? null
                             : () {
                                 currentPage.value = i + 1;
                                 updateSearchPage();
                               },
+                        child: Text("${i + 1}"),
                       ),
                     ));
                   }).toList(),
@@ -1188,7 +1402,7 @@ class _MyAppState extends State<MyApp> {
         },
         dialogBox: false,
         isExpanded: true,
-        menuConstraints: BoxConstraints.tight(Size.fromHeight(350)),
+        menuConstraints: BoxConstraints.tight(const Size.fromHeight(350)),
         itemsPerPage: 5,
         currentPage: currentPage,
       ),
@@ -1211,12 +1425,12 @@ class _MyAppState extends State<MyApp> {
               child: Card(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4),
-                    side: BorderSide(
+                    side: const BorderSide(
                       color: Colors.grey,
                       width: 1,
                     ),
                   ),
-                  margin: EdgeInsets.all(1),
+                  margin: const EdgeInsets.all(1),
                   child: Padding(
                     padding: const EdgeInsets.all(6),
                     child: Text(item["capital"]),
@@ -1227,17 +1441,12 @@ class _MyAppState extends State<MyApp> {
           String filtersString = "";
           int i = 1;
           filters?.forEach((element) {
-            filtersString += "&filter" +
-                i.toString() +
-                "=" +
-                element.item1 +
-                "," +
-                element.item2;
+            filtersString += "&filter$i=${element.item1},${element.item2}";
             i++;
           });
           Response response = await get(Uri.parse(
-                  "https://searchchoices.jod.li/exampleList.php?page=${pageNb ?? 1},10${orderBy == null ? "" : "&order=" + orderBy + "," + (orderAsc ?? true ? "asc" : "desc")}${(keyword == null || keyword.isEmpty) ? "" : "&filter=capital,cs," + keyword}$filtersString"))
-              .timeout(Duration(
+                  "https://searchchoices.jod.li/exampleList.php?page=${pageNb ?? 1},10${orderBy == null ? "" : "&order=$orderBy,${orderAsc ?? true ? "asc" : "desc"}"}${(keyword == null || keyword.isEmpty) ? "" : "&filter=capital,cs,$keyword"}$filtersString"))
+              .timeout(const Duration(
             seconds: 10,
           ));
           if (response.statusCode != 200) {
@@ -1251,12 +1460,12 @@ class _MyAppState extends State<MyApp> {
                     child: Card(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(4),
-                        side: BorderSide(
+                        side: const BorderSide(
                           color: Colors.blue,
                           width: 1,
                         ),
                       ),
-                      margin: EdgeInsets.all(10),
+                      margin: const EdgeInsets.all(10),
                       child: Padding(
                         padding: const EdgeInsets.all(6),
                         child: Text(
@@ -1269,7 +1478,7 @@ class _MyAppState extends State<MyApp> {
         },
         futureSearchOrderOptions: {
           "country": {
-            "icon": Wrap(children: [
+            "icon": Wrap(children: const [
               Icon(Icons.flag),
               Text(
                 "Country",
@@ -1278,18 +1487,19 @@ class _MyAppState extends State<MyApp> {
             "asc": true
           },
           "capital": {
-            "icon":
-                Wrap(children: [Icon(Icons.location_city), Text("Capital")]),
+            "icon": Wrap(
+                children: const [Icon(Icons.location_city), Text("Capital")]),
             "asc": true
           },
-          "continent": {"icon": "Continent", "asc": true},
+          "continent": const {"icon": "Continent", "asc": true},
           "population": {
-            "icon": Wrap(children: [Icon(Icons.people), Text("Population")]),
+            "icon":
+                Wrap(children: const [Icon(Icons.people), Text("Population")]),
             "asc": false
           },
         },
         futureSearchFilterOptions: {
-          "continent": {
+          "continent": const {
             "icon": Text("Continent"),
             "exclusive": true,
             "values": [
@@ -1302,27 +1512,33 @@ class _MyAppState extends State<MyApp> {
             ]
           },
           "population": {
-            "icon": Wrap(children: [Icon(Icons.people), Text("Population")]),
+            "icon":
+                Wrap(children: const [Icon(Icons.people), Text("Population")]),
             "exclusive": true,
             "values": [
               {
-                "lt,1000": Wrap(children: [Icon(Icons.person), Text("<1,000")])
+                "lt,1000":
+                    Wrap(children: const [Icon(Icons.person), Text("<1,000")])
               },
               {
-                "lt,100000":
-                    Wrap(children: [Icon(Icons.person_add), Text("<100,000")])
+                "lt,100000": Wrap(
+                    children: const [Icon(Icons.person_add), Text("<100,000")])
               },
               {
-                "lt,1000000": Wrap(
-                    children: [Icon(Icons.nature_people), Text("<1,000,000")])
+                "lt,1000000": Wrap(children: const [
+                  Icon(Icons.nature_people),
+                  Text("<1,000,000")
+                ])
               },
               {
-                "gt,1000000":
-                    Wrap(children: [Icon(Icons.people), Text(">1,000,000")])
+                "gt,1000000": Wrap(
+                    children: const [Icon(Icons.people), Text(">1,000,000")])
               },
               {
-                "gt,10000000": Wrap(
-                    children: [Icon(Icons.location_city), Text(">10,000,000")])
+                "gt,10000000": Wrap(children: const [
+                  Icon(Icons.location_city),
+                  Text(">10,000,000")
+                ])
               },
             ]
           },
@@ -1339,7 +1555,7 @@ class _MyAppState extends State<MyApp> {
                       Navigator.pop(doneContext);
                       setState(() {});
                     },
-                    child: Icon(
+                    child: const Icon(
                       Icons.close,
                       size: 17,
                     ))),
@@ -1368,12 +1584,12 @@ class _MyAppState extends State<MyApp> {
               child: Card(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4),
-                    side: BorderSide(
+                    side: const BorderSide(
                       color: Colors.grey,
                       width: 1,
                     ),
                   ),
-                  margin: EdgeInsets.all(1),
+                  margin: const EdgeInsets.all(1),
                   child: Padding(
                     padding: const EdgeInsets.all(6),
                     child: Text(item["capital"]),
@@ -1384,17 +1600,12 @@ class _MyAppState extends State<MyApp> {
           String filtersString = "";
           int i = 1;
           filters?.forEach((element) {
-            filtersString += "&filter" +
-                i.toString() +
-                "=" +
-                element.item1 +
-                "," +
-                element.item2;
+            filtersString += "&filter$i=${element.item1},${element.item2}";
             i++;
           });
           Response response = await get(Uri.parse(
-                  "https://searchchoices.jod.li/exampleList.php?page=${pageNb ?? 1},10${orderBy == null ? "" : "&order=" + orderBy + "," + (orderAsc ?? true ? "asc" : "desc")}${(keyword == null || keyword.isEmpty) ? "" : "&filter=capital,cs," + keyword}$filtersString"))
-              .timeout(Duration(
+                  "https://searchchoices.jod.li/exampleList.php?page=${pageNb ?? 1},10${orderBy == null ? "" : "&order=$orderBy,${orderAsc ?? true ? "asc" : "desc"}"}${(keyword == null || keyword.isEmpty) ? "" : "&filter=capital,cs,$keyword"}$filtersString"))
+              .timeout(const Duration(
             seconds: 10,
           ));
           if (response.statusCode != 200) {
@@ -1402,18 +1613,18 @@ class _MyAppState extends State<MyApp> {
           }
           dynamic data = jsonDecode(response.body);
           int nbResults = data["results"];
-          List<DropdownMenuItem> results = (data["records"] as List<dynamic>)
-              .map<DropdownMenuItem>((item) => DropdownMenuItem(
+          var results = (data["records"] as List<dynamic>)
+              .map((item) => DropdownMenuItem(
                     value: item,
                     child: Card(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(4),
-                        side: BorderSide(
+                        side: const BorderSide(
                           color: Colors.blue,
                           width: 1,
                         ),
                       ),
-                      margin: EdgeInsets.all(12),
+                      margin: const EdgeInsets.all(12),
                       child: Padding(
                         padding: const EdgeInsets.all(6),
                         child: Text(
@@ -1426,7 +1637,7 @@ class _MyAppState extends State<MyApp> {
         },
         futureSearchOrderOptions: {
           "country": {
-            "icon": Wrap(children: [
+            "icon": Wrap(children: const [
               Icon(Icons.flag),
               Text(
                 "Country",
@@ -1435,18 +1646,19 @@ class _MyAppState extends State<MyApp> {
             "asc": true
           },
           "capital": {
-            "icon":
-                Wrap(children: [Icon(Icons.location_city), Text("Capital")]),
+            "icon": Wrap(
+                children: const [Icon(Icons.location_city), Text("Capital")]),
             "asc": true
           },
-          "continent": {"icon": "Continent", "asc": true},
+          "continent": const {"icon": "Continent", "asc": true},
           "population": {
-            "icon": Wrap(children: [Icon(Icons.people), Text("Population")]),
+            "icon":
+                Wrap(children: const [Icon(Icons.people), Text("Population")]),
             "asc": false
           },
         },
         futureSearchFilterOptions: {
-          "continent": {
+          "continent": const {
             "icon": Text("Continent"),
             "exclusive": true,
             "values": [
@@ -1459,32 +1671,38 @@ class _MyAppState extends State<MyApp> {
             ]
           },
           "population": {
-            "icon": Wrap(children: [Icon(Icons.people), Text("Population")]),
+            "icon":
+                Wrap(children: const [Icon(Icons.people), Text("Population")]),
             "exclusive": true,
             "values": [
               {
-                "lt,1000": Wrap(children: [Icon(Icons.person), Text("<1,000")])
+                "lt,1000":
+                    Wrap(children: const [Icon(Icons.person), Text("<1,000")])
               },
               {
-                "lt,100000":
-                    Wrap(children: [Icon(Icons.person_add), Text("<100,000")])
+                "lt,100000": Wrap(
+                    children: const [Icon(Icons.person_add), Text("<100,000")])
               },
               {
-                "lt,1000000": Wrap(
-                    children: [Icon(Icons.nature_people), Text("<1,000,000")])
+                "lt,1000000": Wrap(children: const [
+                  Icon(Icons.nature_people),
+                  Text("<1,000,000")
+                ])
               },
               {
-                "gt,1000000":
-                    Wrap(children: [Icon(Icons.people), Text(">1,000,000")])
+                "gt,1000000": Wrap(
+                    children: const [Icon(Icons.people), Text(">1,000,000")])
               },
               {
-                "gt,10000000": Wrap(
-                    children: [Icon(Icons.location_city), Text(">10,000,000")])
+                "gt,10000000": Wrap(children: const [
+                  Icon(Icons.location_city),
+                  Text(">10,000,000")
+                ])
               },
             ]
           },
         },
-        menuConstraints: BoxConstraints.tight(Size.fromHeight(350)),
+        menuConstraints: BoxConstraints.tight(const Size.fromHeight(350)),
       ),
       "Single dialog custom empty list": SearchChoices.single(
         items: items,
@@ -1517,12 +1735,12 @@ class _MyAppState extends State<MyApp> {
               child: Card(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4),
-                    side: BorderSide(
+                    side: const BorderSide(
                       color: Colors.grey,
                       width: 1,
                     ),
                   ),
-                  margin: EdgeInsets.all(1),
+                  margin: const EdgeInsets.all(1),
                   child: Padding(
                     padding: const EdgeInsets.all(6),
                     child: Text(item["capital"]),
@@ -1534,17 +1752,12 @@ class _MyAppState extends State<MyApp> {
           int i = 1;
           filters?.forEach((element) {
             // This example doesn't have any futureSearchFilterOptions parameter, thus, this loop will never run anything.
-            filtersString += "&filter" +
-                i.toString() +
-                "=" +
-                element.item1 +
-                "," +
-                element.item2;
+            filtersString += "&filter$i=${element.item1},${element.item2}";
             i++;
           });
           Response response = await get(Uri.parse(
-                  "https://searchchoices.jod.li/exampleList.php?page=${pageNb ?? 1},10${orderBy == null ? "" : "&order=" + orderBy + "," + (orderAsc ?? true ? "asc" : "desc")}${(keyword == null || keyword.isEmpty) ? "" : "&filter=capital,cs," + keyword}$filtersString"))
-              .timeout(Duration(
+                  "https://searchchoices.jod.li/exampleList.php?page=${pageNb ?? 1},10${orderBy == null ? "" : "&order=$orderBy,${orderAsc ?? true ? "asc" : "desc"}"}${(keyword == null || keyword.isEmpty) ? "" : "&filter=capital,cs,$keyword"}$filtersString"))
+              .timeout(const Duration(
             seconds: 10,
           ));
           if (response.statusCode != 200) {
@@ -1558,12 +1771,12 @@ class _MyAppState extends State<MyApp> {
                     child: Card(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(4),
-                        side: BorderSide(
+                        side: const BorderSide(
                           color: Colors.blue,
                           width: 1,
                         ),
                       ),
-                      margin: EdgeInsets.all(10),
+                      margin: const EdgeInsets.all(10),
                       child: Padding(
                         padding: const EdgeInsets.all(6),
                         child: Text(
@@ -1574,7 +1787,7 @@ class _MyAppState extends State<MyApp> {
               .toList();
           return (Tuple2<List<DropdownMenuItem>, int>(results, nbResults));
         },
-        emptyListWidget: () => Text(
+        emptyListWidget: () => const Text(
           "No result",
           style: TextStyle(
             fontStyle: FontStyle.italic,
@@ -1619,12 +1832,12 @@ class _MyAppState extends State<MyApp> {
               child: Card(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(4),
-                    side: BorderSide(
+                    side: const BorderSide(
                       color: Colors.grey,
                       width: 1,
                     ),
                   ),
-                  margin: EdgeInsets.all(1),
+                  margin: const EdgeInsets.all(1),
                   child: Padding(
                     padding: const EdgeInsets.all(6),
                     child: Text(item["capital"]),
@@ -1635,17 +1848,12 @@ class _MyAppState extends State<MyApp> {
           String filtersString = "";
           int i = 1;
           filters?.forEach((element) {
-            filtersString += "&filter" +
-                i.toString() +
-                "=" +
-                element.item1 +
-                "," +
-                element.item2;
+            filtersString += "&filter$i=${element.item1},${element.item2}";
             i++;
           });
           Response response = await get(Uri.parse(
-                  "https://searchchoices.jod.li/exampleList.php?page=${pageNb ?? 1},10${orderBy == null ? "" : "&order=" + orderBy + "," + (orderAsc ?? true ? "asc" : "desc")}${(keyword == null || keyword.isEmpty) ? "" : "&filter=capital,cs," + keyword}$filtersString"))
-              .timeout(Duration(
+                  "https://searchchoices.jod.li/exampleList.php?page=${pageNb ?? 1},10${orderBy == null ? "" : "&order=$orderBy,${orderAsc ?? true ? "asc" : "desc"}"}${(keyword == null || keyword.isEmpty) ? "" : "&filter=capital,cs,$keyword"}$filtersString"))
+              .timeout(const Duration(
             seconds: 10,
           ));
           if (response.statusCode != 200) {
@@ -1659,12 +1867,12 @@ class _MyAppState extends State<MyApp> {
                     child: Card(
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(4),
-                        side: BorderSide(
+                        side: const BorderSide(
                           color: Colors.blue,
                           width: 1,
                         ),
                       ),
-                      margin: EdgeInsets.all(10),
+                      margin: const EdgeInsets.all(10),
                       child: Padding(
                         padding: const EdgeInsets.all(6),
                         child: Text(
@@ -1677,7 +1885,7 @@ class _MyAppState extends State<MyApp> {
         },
         futureSearchOrderOptions: {
           "country": {
-            "icon": Wrap(children: [
+            "icon": Wrap(children: const [
               Icon(Icons.flag),
               Text(
                 "Country",
@@ -1686,18 +1894,19 @@ class _MyAppState extends State<MyApp> {
             "asc": true
           },
           "capital": {
-            "icon":
-                Wrap(children: [Icon(Icons.location_city), Text("Capital")]),
+            "icon": Wrap(
+                children: const [Icon(Icons.location_city), Text("Capital")]),
             "asc": true
           },
-          "continent": {"icon": "Continent", "asc": true},
+          "continent": const {"icon": "Continent", "asc": true},
           "population": {
-            "icon": Wrap(children: [Icon(Icons.people), Text("Population")]),
+            "icon":
+                Wrap(children: const [Icon(Icons.people), Text("Population")]),
             "asc": false
           },
         },
         futureSearchFilterOptions: {
-          "continent": {
+          "continent": const {
             "icon": Text("Continent"),
             "exclusive": true,
             "values": [
@@ -1710,41 +1919,600 @@ class _MyAppState extends State<MyApp> {
             ]
           },
           "population": {
-            "icon": Wrap(children: [Icon(Icons.people), Text("Population")]),
+            "icon":
+                Wrap(children: const [Icon(Icons.people), Text("Population")]),
             "exclusive": true,
             "values": [
               {
-                "lt,1000": Wrap(children: [Icon(Icons.person), Text("<1,000")])
+                "lt,1000":
+                    Wrap(children: const [Icon(Icons.person), Text("<1,000")])
               },
               {
-                "lt,100000":
-                    Wrap(children: [Icon(Icons.person_add), Text("<100,000")])
+                "lt,100000": Wrap(
+                    children: const [Icon(Icons.person_add), Text("<100,000")])
               },
               {
-                "lt,1000000": Wrap(
-                    children: [Icon(Icons.nature_people), Text("<1,000,000")])
+                "lt,1000000": Wrap(children: const [
+                  Icon(Icons.nature_people),
+                  Text("<1,000,000")
+                ])
               },
               {
-                "gt,1000000":
-                    Wrap(children: [Icon(Icons.people), Text(">1,000,000")])
+                "gt,1000000": Wrap(
+                    children: const [Icon(Icons.people), Text(">1,000,000")])
               },
               {
-                "gt,10000000": Wrap(
-                    children: [Icon(Icons.location_city), Text(">10,000,000")])
+                "gt,10000000": Wrap(children: const [
+                  Icon(Icons.location_city),
+                  Text(">10,000,000")
+                ])
               },
             ]
           },
         },
       ),
+      "Single dialog future custom error button": SearchChoices.single(
+        value: selectedValueSingleDialogFuture,
+        hint: kIsWeb ? "Example not for web" : "Select one capital",
+        searchHint: "Search capitals",
+        onChanged: kIsWeb
+            ? null
+            : (value) {
+                setState(() {
+                  selectedValueSingleDialogFuture = value;
+                });
+              },
+        isExpanded: true,
+        selectedValueWidgetFn: (item) {
+          return (Center(
+              child: Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                    side: const BorderSide(
+                      color: Colors.grey,
+                      width: 1,
+                    ),
+                  ),
+                  margin: const EdgeInsets.all(1),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Text(item["capital"]),
+                  ))));
+        },
+        futureSearchFn: (String? keyword, String? orderBy, bool? orderAsc,
+            List<Tuple2<String, String>>? filters, int? pageNb) async {
+          String filtersString = "";
+          int i = 1;
+          filters?.forEach((element) {
+            // This example doesn't have any futureSearchFilterOptions parameter, thus, this loop will never run anything.
+            filtersString += "&filter$i=${element.item1},${element.item2}";
+            i++;
+          });
+          Response response = await get(Uri.parse(
+                  "https://FAULTYsearchchoices.jod.li/exampleList.php?page=${pageNb ?? 1},10${orderBy == null ? "" : "&order=$orderBy,${orderAsc ?? true ? "asc" : "desc"}"}${(keyword == null || keyword.isEmpty) ? "" : "&filter=capital,cs,$keyword"}$filtersString"))
+              .timeout(const Duration(
+            seconds: 10,
+          ));
+          if (response.statusCode != 200) {
+            throw Exception("failed to get data from internet");
+          }
+          dynamic data = jsonDecode(response.body);
+          int nbResults = data["results"];
+          List<DropdownMenuItem> results = (data["records"] as List<dynamic>)
+              .map<DropdownMenuItem>((item) => DropdownMenuItem(
+                    value: item,
+                    child: Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                        side: const BorderSide(
+                          color: Colors.blue,
+                          width: 1,
+                        ),
+                      ),
+                      margin: const EdgeInsets.all(10),
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Text(
+                            "${item["capital"]} - ${item["country"]} - ${item["continent"]} - pop.: ${item["population"]}"),
+                      ),
+                    ),
+                  ))
+              .toList();
+          return (Tuple2<List<DropdownMenuItem>, int>(results, nbResults));
+        },
+        futureSearchRetryButton: (Function onPressed) => Column(children: [
+          const SizedBox(height: 15),
+          Center(
+            child: ElevatedButton.icon(
+                onPressed: () {
+                  onPressed();
+                },
+                icon: const Icon(Icons.repeat),
+                label: const Text("Intentional error - retry")),
+          )
+        ]),
+      ),
+      "Single dialog paged delayed": SearchChoices.single(
+        items: items,
+        value: selectedValueSingleDialogPaged,
+        hint: "Select one",
+        searchHint: "Search one",
+        onChanged: (value) {
+          setState(() {
+            selectedValueSingleDialogPaged = value;
+          });
+        },
+        isExpanded: true,
+        itemsPerPage: 5,
+        currentPage: currentPage,
+        searchDelay: 500,
+      ),
+      "Single dialog paged future delayed": SearchChoices.single(
+        value: selectedValueSingleDialogPagedFuture,
+        hint: kIsWeb ? "Example not for web" : "Select one capital",
+        searchHint: "Search capitals",
+        onChanged: kIsWeb
+            ? null
+            : (value) {
+                setState(() {
+                  selectedValueSingleDialogPagedFuture = value;
+                });
+              },
+        isExpanded: true,
+        itemsPerPage: 10,
+        currentPage: currentPage,
+        selectedValueWidgetFn: (item) {
+          return (Center(
+              child: Card(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(4),
+                    side: const BorderSide(
+                      color: Colors.grey,
+                      width: 1,
+                    ),
+                  ),
+                  margin: const EdgeInsets.all(1),
+                  child: Padding(
+                    padding: const EdgeInsets.all(6),
+                    child: Text(item["capital"]),
+                  ))));
+        },
+        futureSearchFn: (String? keyword, String? orderBy, bool? orderAsc,
+            List<Tuple2<String, String>>? filters, int? pageNb) async {
+          String filtersString = "";
+          int i = 1;
+          filters?.forEach((element) {
+            filtersString += "&filter$i=${element.item1},${element.item2}";
+            i++;
+          });
+          Response response = await get(Uri.parse(
+                  "https://searchchoices.jod.li/exampleList.php?page=${pageNb ?? 1},10${orderBy == null ? "" : "&order=$orderBy,${orderAsc ?? true ? "asc" : "desc"}"}${(keyword == null || keyword.isEmpty) ? "" : "&filter=capital,cs,$keyword"}$filtersString"))
+              .timeout(const Duration(
+            seconds: 10,
+          ));
+          if (response.statusCode != 200) {
+            throw Exception("failed to get data from internet");
+          }
+          dynamic data = jsonDecode(response.body);
+          int nbResults = data["results"];
+          List<DropdownMenuItem> results = (data["records"] as List<dynamic>)
+              .map<DropdownMenuItem>((item) => DropdownMenuItem(
+                    value: item,
+                    child: Card(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(4),
+                        side: const BorderSide(
+                          color: Colors.blue,
+                          width: 1,
+                        ),
+                      ),
+                      margin: const EdgeInsets.all(10),
+                      child: Padding(
+                        padding: const EdgeInsets.all(6),
+                        child: Text(
+                            "${item["capital"]} - ${item["country"]} - ${item["continent"]} - pop.: ${item["population"]}"),
+                      ),
+                    ),
+                  ))
+              .toList();
+          return (Tuple2<List<DropdownMenuItem>, int>(results, nbResults));
+        },
+        futureSearchOrderOptions: {
+          "country": {
+            "icon": Wrap(children: const [
+              Icon(Icons.flag),
+              Text(
+                "Country",
+              )
+            ]),
+            "asc": true
+          },
+          "capital": {
+            "icon": Wrap(
+                children: const [Icon(Icons.location_city), Text("Capital")]),
+            "asc": true
+          },
+          "continent": const {"icon": "Continent", "asc": true},
+          "population": {
+            "icon":
+                Wrap(children: const [Icon(Icons.people), Text("Population")]),
+            "asc": false
+          },
+        },
+        futureSearchFilterOptions: {
+          "continent": const {
+            "icon": Text("Continent"),
+            "exclusive": true,
+            "values": [
+              {"eq,Africa": "Africa"},
+              {"eq,Americas": "Americas"},
+              {"eq,Asia": "Asia"},
+              {"eq,Australia": "Australia"},
+              {"eq,Europe": "Europe"},
+              {"eq,Oceania": "Oceania"}
+            ]
+          },
+          "population": {
+            "icon":
+                Wrap(children: const [Icon(Icons.people), Text("Population")]),
+            "exclusive": true,
+            "values": [
+              {
+                "lt,1000":
+                    Wrap(children: const [Icon(Icons.person), Text("<1,000")])
+              },
+              {
+                "lt,100000": Wrap(
+                    children: const [Icon(Icons.person_add), Text("<100,000")])
+              },
+              {
+                "lt,1000000": Wrap(children: const [
+                  Icon(Icons.nature_people),
+                  Text("<1,000,000")
+                ])
+              },
+              {
+                "gt,1000000": Wrap(
+                    children: const [Icon(Icons.people), Text(">1,000,000")])
+              },
+              {
+                "gt,10000000": Wrap(children: const [
+                  Icon(Icons.location_city),
+                  Text(">10,000,000")
+                ])
+              },
+            ],
+          },
+        },
+        closeButton: (selectedItemsDone, doneContext) {
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              SizedBox(
+                height: 25,
+                width: 48,
+                child: (ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(doneContext);
+                      setState(() {});
+                    },
+                    child: const Icon(
+                      Icons.close,
+                      size: 17,
+                    ))),
+              ),
+            ],
+          );
+        },
+        searchDelay: 500,
+        // Here, buildFutureFilterOrOrderButton doesn't change anything.
+        // This is a way to make sure this parameter still works with automated
+        // integration testing.
+        buildFutureFilterOrOrderButton: ({
+          required BuildContext context,
+          required bool filter,
+          required Function onPressed,
+          int? nbFilters,
+          bool? orderAsc,
+          String? orderBy,
+        }) {
+          if (filter) {
+            return (SizedBox(
+              height: 25,
+              width: 48,
+              child: (ElevatedButton(
+                child: Icon(
+                  nbFilters == null || nbFilters == 0
+                      ? Icons.filter
+                      : nbFilters == 1
+                          ? Icons.filter_1
+                          : nbFilters == 2
+                              ? Icons.filter_2
+                              : nbFilters == 3
+                                  ? Icons.filter_3
+                                  : nbFilters == 4
+                                      ? Icons.filter_4
+                                      : nbFilters == 5
+                                          ? Icons.filter_5
+                                          : nbFilters == 6
+                                              ? Icons.filter_6
+                                              : nbFilters == 7
+                                                  ? Icons.filter_7
+                                                  : nbFilters == 8
+                                                      ? Icons.filter_8
+                                                      : nbFilters == 9
+                                                          ? Icons.filter_9
+                                                          : Icons
+                                                              .filter_9_plus_sharp,
+                  size: 17,
+                ),
+                onPressed: () {
+                  onPressed();
+                },
+              )),
+            ));
+          }
+
+          Widget icon = Icon(
+            Icons.sort,
+            size: 17,
+          );
+
+          return SizedBox(
+            height: 25,
+            width: orderBy == null ? 48 : 70,
+            child: (orderBy == null
+                ? ElevatedButton(
+                    child: icon,
+                    onPressed: () {
+                      onPressed();
+                    },
+                  )
+                : ElevatedButton.icon(
+                    label: Icon(
+                      orderAsc ?? true
+                          ? Icons.arrow_upward
+                          : Icons.arrow_downward,
+                      size: 17,
+                    ),
+                    icon: icon,
+                    onPressed: () {
+                      onPressed();
+                    },
+                  )),
+          );
+        },
+        // Here, searchResultDisplayFn doesn't change anything.
+        // This is a way to make sure this parameter still works with automated
+        // integration testing.
+        searchResultDisplayFn: ({
+          required List<Tuple3<int, DropdownMenuItem, bool>> itemsToDisplay,
+          required ScrollController scrollController,
+          required bool thumbVisibility,
+          required Widget emptyListWidget,
+          required void Function(int index, dynamic value, bool itemSelected)
+              itemTapped,
+          required Widget Function(DropdownMenuItem item, bool isItemSelected)
+              displayItem,
+        }) {
+          return Expanded(
+            child: Scrollbar(
+              controller: scrollController,
+              thumbVisibility: thumbVisibility,
+              child: itemsToDisplay.length == 0
+                  ? emptyListWidget
+                  : ListView.builder(
+                      controller: scrollController,
+                      itemBuilder: (context, index) {
+                        int itemIndex = itemsToDisplay[index].item1;
+                        DropdownMenuItem item = itemsToDisplay[index].item2;
+                        bool isItemSelected = itemsToDisplay[index].item3;
+                        return InkWell(
+                          onTap: () {
+                            itemTapped(
+                              itemIndex,
+                              item.value,
+                              isItemSelected,
+                            );
+                          },
+                          child: displayItem(
+                            item,
+                            isItemSelected,
+                          ),
+                        );
+                      },
+                      itemCount: itemsToDisplay.length,
+                    ),
+            ),
+          );
+        },
+      ),
+      "Single dialog custom field presentation": SearchChoices.single(
+        items: items,
+        value: selectedValueSingleDialog,
+        hint: "Select one",
+        searchHint: "Select one",
+        onChanged: (value) {
+          setState(() {
+            selectedValueSingleDialog = value;
+          });
+        },
+        isExpanded: true,
+        fieldPresentationFn: (Widget fieldWidget, {bool? selectionIsValid}) {
+          return Container(
+            padding: const EdgeInsets.all(12.0),
+            child: InputDecorator(
+              decoration: InputDecoration(
+                labelText: 'Label',
+                isDense: true,
+                filled: true,
+                fillColor: Colors.green.shade100,
+                border: const OutlineInputBorder(
+                  borderRadius: BorderRadius.all(Radius.circular(10)),
+                ),
+              ),
+              child: fieldWidget,
+            ),
+          );
+        },
+      ),
+      "Single custom showDialogFn": SearchChoices.single(
+        items: items,
+        value: selectedValueSingleDialog,
+        onChanged: (value) {
+          setState(() {
+            selectedValueSingleDialog = value;
+          });
+        },
+        hint: "Select one",
+        isExpanded: true,
+        showDialogFn: (
+          BuildContext context,
+          Widget Function({String searchTerms}) menuWidget,
+          String searchTerms,
+        ) async {
+          await showDialog(
+              barrierColor: Colors.pinkAccent,
+              context: context,
+              barrierDismissible: false,
+              builder: (BuildContext dialogContext) {
+                return (menuWidget(searchTerms: searchTerms));
+              });
+        },
+      ),
+      "Validator in form": Form(
+        key: _formKeyForValidator,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            TextFormField(
+              validator: (String? value) {
+                if (value == "ok") {
+                  return (null);
+                }
+                return ("Not the expected value");
+              },
+            ),
+            SearchChoices.single(
+              items: items,
+              value: selectedValueSingleDialog,
+              onChanged: (value) {
+                setState(() {
+                  selectedValueSingleDialog = value;
+                });
+              },
+              isExpanded: true,
+              validator: (dynamic value) {
+                if (value == null) {
+                  return ("Must select a value");
+                }
+                if (!(value is String)) {
+                  return ("Selected value must be a String");
+                }
+                if (value.startsWith("l")) {
+                  return (null);
+                }
+                return ("Must start with 'l'");
+              },
+            ),
+            SearchChoices.multiple(
+              items: items,
+              selectedItems: selectedItemsMultiDialog,
+              onChanged: (value) {
+                setState(() {
+                  selectedItemsMultiDialog = value;
+                });
+              },
+              isExpanded: true,
+              validator: (dynamic value) {
+                if (value == null) {
+                  return ("Must select some values");
+                }
+                if (!(value is List<int>)) {
+                  return ("Selection is of unexpected type");
+                }
+                if (value.length < 3) {
+                  return ("Must select at least 3");
+                }
+                return (null);
+              },
+            ),
+            TextButton(
+              onPressed: () {
+                if (_formKeyForValidator.currentState?.validate() ?? false) {
+                  setState(() {
+                    formResult = "All good";
+                  });
+                } else {
+                  setState(() {
+                    formResult = "Form is not valid!";
+                  });
+                }
+              },
+              child: const Text("Ok"),
+            ),
+            formResult == null
+                ? SizedBox.shrink()
+                : Text(formResult ?? "",
+                    style: TextStyle(
+                      color:
+                          formResult == "All good" ? Colors.black : Colors.red,
+                    )),
+          ],
+        ),
+      ),
+      "Custom objects single and multiple dialogs": CustomObjectSample(),
     };
 
+    List<Widget> exampleWidgets = [];
+    int? exampleId = int.tryParse(widgetSearchString);
+    if (widgetSearchString.isNotEmpty &&
+        exampleId != null &&
+        exampleId >= 0 &&
+        exampleId < widgets.length) {
+      exampleWidgets = [
+        widgetToExample(
+          widgets.values.toList()[exampleId],
+          widgets.keys.toList()[exampleId],
+          exampleId,
+        )
+      ];
+    } else {
+      exampleWidgets = widgets
+          .map((k, v) {
+            return (MapEntry(
+              k,
+              !k.toLowerCase().contains(widgetSearchString)
+                  ? const SizedBox.shrink()
+                  : widgetToExample(
+                      v,
+                      k,
+                      widgets.keys.toList().indexOf(k),
+                    ),
+            ));
+          })
+          .values
+          .toList();
+    }
+
     return MaterialApp(
+      scaffoldMessengerKey: _messengerKey,
+      theme: ThemeData(
+        textSelectionTheme: TextSelectionThemeData(
+          cursorColor: FlutsterTestRecord.defaultRecord.active
+              ?
+              // This helps a lot for screenshot comparisons on tests
+              Colors.white
+              : null,
+        ),
+      ),
       debugShowCheckedModeBanner: false,
       navigatorKey: MyApp.navKey,
       home: asTabs
           ? DefaultTabController(
               length: widgets.length,
-              child: Scaffold(
+              child: FlutsterScaffold(
+                name: "SearchChoicesDemoTabs",
                 appBar: AppBar(
                   title: const Text(appTitle),
                   actions: appBarActions,
@@ -1760,7 +2528,7 @@ class _MyAppState extends State<MyApp> {
                   ),
                 ),
                 body: Container(
-                  padding: EdgeInsets.all(20),
+                  padding: const EdgeInsets.all(20),
                   child: TabBarView(
                     children: widgets
                         .map((k, v) {
@@ -1770,7 +2538,7 @@ class _MyAppState extends State<MyApp> {
                                 scrollDirection: Axis.vertical,
                                 child: Column(children: [
                                   Text(k),
-                                  SizedBox(
+                                  const SizedBox(
                                     height: 20,
                                   ),
                                   v,
@@ -1783,7 +2551,8 @@ class _MyAppState extends State<MyApp> {
                 ),
               ),
             )
-          : Scaffold(
+          : FlutsterScaffold(
+              name: "SearchChoicesDemoNoTabs",
               appBar: AppBar(
                 title: const Text(appTitle),
                 actions: appBarActions,
@@ -1791,42 +2560,101 @@ class _MyAppState extends State<MyApp> {
               body: SingleChildScrollView(
                 scrollDirection: Axis.vertical,
                 child: Column(
-                  children: widgets
-                      .map((k, v) {
-                        return (MapEntry(
-                            k,
-                            Center(
-                                child: Card(
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(10),
-                                      side: BorderSide(
-                                        color: Colors.grey,
-                                        width: 1.0,
-                                      ),
-                                    ),
-                                    margin: EdgeInsets.all(20),
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(20.0),
-                                      child: Column(
-                                        children: <Widget>[
-                                          Text("$k:"),
-                                          v,
-                                        ],
-                                      ),
-                                    )))));
-                      })
-                      .values
-                      .toList()
+                  children: exampleWidgets
                     ..add(
-                      Center(
+                      //prevents scrolling issues at the end of the list of Widgets
+                      const Center(
                         child: SizedBox(
                           height: 500,
                         ),
                       ),
-                    ), //prevents scrolling issues at the end of the list of Widgets
+                    )
+                    ..insert(
+                      0,
+                      Center(
+                        child: searchField(),
+                      ),
+                    ),
                 ),
               ),
             ),
     );
+  }
+
+  Widget searchField() {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: widgetSearchController,
+              decoration:
+                  const InputDecoration(hintText: 'Search for an example'),
+              onChanged: (value) {
+                setState(() {
+                  widgetSearchString = value;
+                });
+              },
+            ),
+          ),
+          const SizedBox(
+            width: 8,
+          ),
+          IconButton(
+            icon: Icon(
+              Icons.clear,
+              color: widgetSearchString.isEmpty ? Colors.grey : Colors.black,
+            ),
+            onPressed: widgetSearchString.isEmpty
+                ? null
+                : () {
+                    setState(() {
+                      widgetSearchString = "";
+                      widgetSearchController.text = "";
+                    });
+                  },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget widgetToExample(
+    Widget w,
+    String name,
+    int id,
+  ) {
+    return (Center(
+        child: Card(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+              side: const BorderSide(
+                color: Colors.grey,
+                width: 1.0,
+              ),
+            ),
+            margin: const EdgeInsets.all(20),
+            child: Padding(
+              padding: const EdgeInsets.all(20.0),
+              child: Column(
+                children: <Widget>[
+                  Tooltip(
+                    message: "$id",
+                    child: Text(
+                      "$name:",
+                    ),
+                  ),
+                  w,
+                ],
+              ),
+            ))));
+  }
+
+  void snack(BuildContext context, dynamic content) {
+    if (content is String) {
+      content = Text(content);
+    }
+    _messengerKey.currentState?.showSnackBar(SnackBar(content: content));
   }
 }

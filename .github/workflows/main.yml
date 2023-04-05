@@ -1,6 +1,10 @@
 name: CI-CD
 
-on: [push,pull_request]
+on:
+  push:
+    paths:
+      - 'pubspec.yaml'
+      - '.github/workflows/main.yaml'
 
 jobs:
   test:
@@ -8,8 +12,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-# publishing to pub.dev is only possible from Linux apparently
-#        os: [macos-latest]
+        # publishing to pub.dev is only possible from Linux apparently
+        #        os: [macos-latest]
         os: [ubuntu-latest]
     steps:
       - uses: actions/checkout@v2
@@ -18,13 +22,37 @@ jobs:
           java-version: '12.x'
       - uses: subosito/flutter-action@v1
         with:
-          channel: 'dev'
+          channel: 'stable'
       - run: flutter pub get
       - run: flutter format .
       - run: flutter analyze
       - run: flutter config --enable-web
       - run: flutter config --enable-linux-desktop
       - run: flutter test
+      - run: pushd example&&flutter build web
+      - run: sed -i 's/<base href="\/">/<base href="\/search_choices\/demo\/">/g' example/build/web/index.html
+      - run: mkdir -p emptyRoot
+      - run: mv example/build/web/ emptyRoot/demo
+      -
+        name: Deploy to GitHub Pages
+        if: success()
+        uses: crazy-max/ghaction-github-pages@v2
+        with:
+          target_branch: master
+          build_dir: emptyRoot
+          jekyll: false
+          keep_history: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_PERSONAL_ACCESS_TOKEN }}
+
+  integration_test:
+    name: CI-CD integration test
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v1
+      - run: scrcpy --record-format=mkv -r example/integration_test.mkv &
+      - run: cd example &&flutter test integration_test/example_test.dart --dart-define="flutsterKey=${{ secrets.FLUTSTERAPIKEY }}" --dart-define="flutsterUser=${{ secrets.FLUTSTERAPIUSER }}" --dart-define="flutsterUrl=${{ secrets.FLUTSTERAPIURL }}";killall scrcpy
+      - run: ~/knock.sh ${{ secrets.jodhost }};scp example/integration_test.mkv ${{ secrets.jodsshuser }}@${{ secrets.jodhost }}:~/fromgithub/
 
 #      - name: Publish
 #        uses: sakebook/actions-flutter-pub-publisher@v1.2.1
@@ -33,29 +61,33 @@ jobs:
 #          flutter_package: false
 #          skip_test: true
 
-      - run: pushd example&&flutter build web
-      - name: Deploy web
-        uses: garygrossgarten/github-action-scp@release
-        with:
-          local: example/build/web
-          remote: fromgithub/
-          host: ${{ secrets.jodhost }}
-          username: ${{ secrets.jodsshuser }}
-          password: ${{ secrets.jodsshpassword }}
-          recursive: true
-      - run: pushd example&&flutter build apk --release
-      - name: Deploy apk
-        uses: garygrossgarten/github-action-scp@release
-        with:
-          local: example/build/app/outputs/apk/release
-          remote: fromgithub/
-          host: ${{ secrets.jodhost }}
-          username: ${{ secrets.jodsshuser }}
-          password: ${{ secrets.jodsshpassword }}
-          recursive: true
+#      - run: pushd example&&flutter build web
+#      - run: sudo apt-get install -y knockd
+#      - run: knock ${{ secrets.knockparameters }}
+#      - name: Deploy web
+#        uses: garygrossgarten/github-action-scp@release
+#        with:
+#          local: example/build/web
+#          remote: fromgithub/
+#          host: ${{ secrets.jodhost }}
+#          username: ${{ secrets.jodsshuser }}
+#          password: ${{ secrets.jodsshpassword }}
+#          recursive: true
+#      - run: pushd example&&flutter build apk --release
+#      - run: knock ${{ secrets.knockparameters }}
+#      - name: Deploy apk
+#        uses: garygrossgarten/github-action-scp@release
+#        with:
+#          local: example/build/app/outputs/apk/release
+#          remote: fromgithub/
+#          host: ${{ secrets.jodhost }}
+#          username: ${{ secrets.jodsshuser }}
+#          password: ${{ secrets.jodsshpassword }}
+#          recursive: true
 
 # cannot build linux bundle on github because not allowed to run apt-get install
 #      - run: apt-get install cmake gcc g++ ninja&&export ENABLE_FLUTTER_DESKTOP=true&&pushd example&&flutter config --enable-linux-desktop&&flutter create .&&flutter build linux --release&&tar -cvjf search_choices_example_linux_bundle_x64.tar.bz2 build/linux/x64/release/bundle/
+#      - run: knock ${{ secrets.knockparameters }}
 #      - name: Deploy Linux bundle
 #        uses: garygrossgarten/github-action-scp@release
 #        with:
@@ -70,6 +102,7 @@ jobs:
 # ios build fails apparently because of missing signature despite the --no-codesign parameter
 #      - run: pushd example&&flutter build ios --release --no-codesign
 #      - name: Deploy ios
+#      - run: knock ${{ secrets.knockparameters }}
 #        uses: garygrossgarten/github-action-scp@release
 #        with:
 #          local: example/build/ios/iphoneos/Runner.app
@@ -88,3 +121,6 @@ jobs:
 ##          refreshToken: ${{ secrets.OAUTH_REFRESH_TOKEN }}
 #          credentialJson: ${{ secrets.CREDENTIAL_JSON }}
 #          skipTests: true
+
+
+

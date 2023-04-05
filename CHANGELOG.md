@@ -1,3 +1,107 @@
+## 2.2.5
+
+* pubspec.yaml description was too long for pub.dev
+
+## 2.2.4
+
+* added searchResultDisplayFn. Thanks @ramioooz https://github.com/lcuis/search_choices/issues/109
+* improved documentation and simplified constructors. Thanks @Macacoazul01 https://github.com/lcuis/search_choices/issues/65
+* marked assertUniqueValue parameter as deprecated since it is not used anywhere.
+
+## 2.2.3
+
+* added buildFutureFilterOrOrderButton to customize future filter and order button. Thanks @agustin-garcia https://github.com/lcuis/search_choices/issues/107
+* continued with task 2 of https://github.com/lcuis/search_choices/issues/100
+
+## 2.2.2
+
+* subtitle1 is deprecated. Use titleMedium instead.
+* compileSdkVersion 33
+* started with task 2 of https://github.com/lcuis/search_choices/issues/100
+
+## 2.2.1
+
+* If there is no validator nor any listValidator, form validation is not triggered. Thanks @Macacoazul01 https://github.com/lcuis/search_choices/pull/102
+
+## 2.2.0
+
+* Avoided a warning when validating a form with multiple objects. Thanks @Macacoazul01 https://github.com/lcuis/search_choices/issues/97
+* Separated big classes. Thanks @Macacoazul01 https://github.com/lcuis/search_choices/issues/100
+
+## 2.1.8
+
+* Added parameter giveMeThePop to allow closing the dialog or menu from outside the widget. Thanks @krButani https://github.com/lcuis/search_choices/issues/94
+
+## 2.1.7
+
+* Removed assertion condition forcing buildDropDownDialog to be null if dialogBox is false. Thanks @krButani https://github.com/lcuis/search_choices/issues/93
+
+## 2.1.6
+
+* Removed assertion preventing the use of validator together with fieldDecoration. Thanks @willhhf https://github.com/lcuis/search_choices/issues/92
+
+## 2.1.5
+
+* Validator in form: The form field validator is called by the parent form validator. Thanks @martin-labanic https://github.com/lcuis/search_choices/issues/68
+
+## 2.1.4
+
+* Updated kotlin version from 1.3.50 to 1.7.20 . Thanks @wutsi https://github.com/lcuis/search_choices/issues/91
+
+## 2.1.3
+
+* Corrected video link on readme page to use https instead of http.
+
+## 2.1.2
+
+* Sort and filter buttons don't appear when searchHint is not provided. Thanks @rob-mur https://github.com/lcuis/search_choices/issues/88
+* Initial effort to support FormField parameters. Thanks @martin-labanic https://github.com/lcuis/search_choices/issues/68
+* Recording Flutster automated integration testing as a playable video.
+
+## 2.1.1
+
+* Preventing a breaking change when projects older than 2.0.21 set an int padding. Thanks @MikeAndrson https://github.com/lcuis/search_choices/commit/6c05345c0144b82034f98997ba7067f51f950ee3#commitcomment-79884226
+
+## 2.1.0
+
+* Added Flutster integration testing.
+* Customize the call to showDialog with showDialogFn. Thanks @slavap https://github.com/lcuis/search_choices/issues/84
+
+## 2.0.21
+
+* Updated license date. Fixed a deprecation warning in pub.dev with isAlwaysShown.
+* Fixed increasing or decreasing size between hint, enabled, disabled, selected states. Thanks @vaibhavjoshi247 https://github.com/lcuis/search_choices/issues/81
+* Added fieldDecoration. Thanks @rhernandez-itemsoft https://github.com/lcuis/search_choices/issues/78
+* Added clearSearchIcon. Thanks @gslender https://github.com/lcuis/search_choices/issues/73
+
+## 2.0.20
+
+* Added dropDownDialogPadding parameter. Thanks @Macacoazul01 https://github.com/lcuis/search_choices/issues/77
+
+## 2.0.19
+
+* ScrollBar parameter isAlwaysShown is back instead of thumbVisibility as it broke the build as shown in https://github.com/lcuis/search_choices/issues/70
+* Working with stable flutter channel on GitHub CI/CD instead of dev channel.
+
+## 2.0.18
+
+* Added fieldPresentationFn for the needs of https://github.com/lcuis/search_choices/issues/69 . Thanks @sajiyabro98 .
+
+## 2.0.17
+
+* Bug 63 1.1 Click on dropdown button while menu is opened doesn't close menu. Thanks @Macacoazul01 https://github.com/lcuis/search_choices/issues/63
+* Enhancement 63 1.2 Pop menu from onChanged. Thanks @Macacoazul01 https://github.com/lcuis/search_choices/issues/63
+* Enhancement 63 2.2 Pop menu from updateParent. Thanks @Macacoazul01 https://github.com/lcuis/search_choices/issues/63
+* Bug 63 3. Delete last item from menu causes index error. Thanks @Macacoazul01 https://github.com/lcuis/search_choices/issues/63
+
+## 2.0.16
+
+* Added searchDelay to give some time before search function is called in Future and non-Future cases. Thanks @rhernandez-itemsoft https://github.com/lcuis/search_choices/issues/58
+
+## 2.0.15
+
+* Customize error - retry button through new parameter futureSearchRetryButton. Thanks @rhernandez-itemsoft https://github.com/lcuis/search_choices/issues/56
+
 ## 2.0.14
 
 * Use of context for onChange was potentially breaking situations where Widget was already disposed. Thanks @bondjpf https://github.com/lcuis/search_choices/issues/51
